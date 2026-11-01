@@ -1,0 +1,469 @@
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import {
+  checkDomain,
+  destroySite,
+  dropDomain,
+  invite,
+  newDomain,
+  newPage,
+  removePage,
+  revoke,
+} from "@/app/actions";
+import { ConfirmButton, CopyText, InlineForm } from "@/components/dash/forms";
+import { timeAgo } from "@/lib/time";
+import { atLeast, HttpError, requireUser } from "@/lib/auth";
+import {
+  APP_ROOT_DOMAIN,
+  listActivity,
+  listDomains,
+  listLeads,
+  listMembers,
+  listPages,
+  PLATFORM_TARGET,
+  siteFor,
+} from "@/lib/repo";
+
+export const dynamic = "force-dynamic";
+
+type Params = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ tab?: string }>;
+};
+
+const tabs = [
+  ["paginas", "Páginas"],
+  ["dominios", "Domínios"],
+  ["equipe", "Equipe"],
+  ["contatos", "Contatos"],
+  ["atividade", "Atividade"],
+] as const;
+
+const statusLabel: Record<string, string> = {
+  pending: "Aguardando DNS",
+  verified: "Propriedade confirmada",
+  active: "Ativo",
+};
+
+export async function generateMetadata({ params }: Params) {
+  return { title: (await params).slug };
+}
+
+export default async function SitePage({ params, searchParams }: Params) {
+  const user = await requireUser();
+  const { slug } = await params;
+  const tab = (await searchParams).tab ?? "paginas";
+  let ctx;
+  try {
+    ctx = siteFor(user, slug);
+  } catch (e) {
+    if (e instanceof HttpError && e.status === 404) notFound();
+    redirect("/app");
+  }
+  const { site, role } = ctx;
+  const isAdmin = atLeast(role, "admin");
+  const liveUrl = `/sites/${site.slug}`;
+
+  return (
+    <div className="d-page">
+      <Link href="/app" className="d-back">
+        ← Sites
+      </Link>
+      <div className="d-page-head">
+        <div>
+          <h1>{site.name}</h1>
+          <p className="d-muted">
+            Endereço provisório:{" "}
+            <code>
+              {site.slug}.{APP_ROOT_DOMAIN}
+            </code>{" "}
+            ·{" "}
+            <a href={liveUrl} target="_blank" rel="noreferrer">
+              ver o site publicado
+            </a>
+          </p>
+        </div>
+        <Link
+          href={`/app/s/${site.slug}/edit?path=/`}
+          className="d-btn d-btn-primary"
+        >
+          Abrir editor
+        </Link>
+      </div>
+
+      <nav className="d-tabs" aria-label="Seções do site">
+        {tabs.map(([id, label]) => (
+          <Link
+            key={id}
+            href={`?tab=${id}`}
+            className={tab === id ? "is-active" : undefined}
+            aria-current={tab === id ? "page" : undefined}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      {tab === "paginas" && (
+        <section className="d-card">
+          <table className="d-table">
+            <thead>
+              <tr>
+                <th>Página</th>
+                <th>Situação</th>
+                <th>Última edição</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {listPages(site.id).map((p) => (
+                <tr key={p.path}>
+                  <td>
+                    <strong>
+                      {p.title || (p.path === "/" ? "Página inicial" : p.path)}
+                    </strong>
+                    <small>{p.path}</small>
+                  </td>
+                  <td>
+                    {p.review_requested ? (
+                      <span className="d-flag d-flag-warn">
+                        Aguardando revisão
+                      </span>
+                    ) : p.published_version === null ? (
+                      <span className="d-flag">Nunca publicada</span>
+                    ) : p.has_changes ? (
+                      <span className="d-flag d-flag-info">
+                        Versão {p.published_version} no ar · rascunho com
+                        mudanças
+                      </span>
+                    ) : (
+                      <span className="d-flag d-flag-ok">
+                        Versão {p.published_version} no ar
+                      </span>
+                    )}
+                  </td>
+                  <td className="d-muted">
+                    {timeAgo(p.updated_at)}
+                    {p.updated_by_name ? ` por ${p.updated_by_name}` : ""}
+                  </td>
+                  <td className="d-row-actions">
+                    <Link
+                      href={`/app/s/${site.slug}/edit?path=${encodeURIComponent(
+                        p.path
+                      )}`}
+                      className="d-btn d-btn-sm"
+                    >
+                      Editar
+                    </Link>
+                    {p.published_version !== null && (
+                      <a
+                        href={`${liveUrl}${p.path === "/" ? "" : p.path}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="d-btn d-btn-ghost d-btn-sm"
+                      >
+                        Ver
+                      </a>
+                    )}
+                    {isAdmin && p.path !== "/" && (
+                      <ConfirmButton
+                        action={removePage.bind(null, site.slug, p.path)}
+                        label="Apagar"
+                        confirmLabel="Apagar página"
+                      />
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {isAdmin && (
+            <div className="d-card-foot">
+              <h3>Nova página</h3>
+              <InlineForm
+                action={newPage.bind(null, site.slug)}
+                submit="Criar página"
+                pendingText="Criando…"
+              >
+                <input
+                  id="page-title"
+                  name="title"
+                  placeholder="Título (ex.: Sobre nós)"
+                  required
+                  aria-label="Título"
+                />
+                <input
+                  id="page-path"
+                  name="path"
+                  placeholder="Endereço (ex.: /sobre)"
+                  required
+                  aria-label="Endereço"
+                />
+              </InlineForm>
+              <p className="d-muted d-small">
+                A página nova já vem com o menu e o rodapé do site. Monte o
+                resto com blocos ou peça à IA.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {tab === "dominios" && (
+        <section className="d-card">
+          <h2>Domínio próprio</h2>
+          <p className="d-muted">
+            O cliente continua dono do domínio. Ele só cria dois registros no
+            DNS (no Registro.br ou onde estiver). Não altere os registros de
+            e-mail (MX) nem troque os servidores DNS.
+          </p>
+          {listDomains(site.id).map((d) => (
+            <div key={d.id} className="d-domain">
+              <div className="d-domain-head">
+                <strong>{d.host}</strong>
+                <span
+                  className={`d-flag ${
+                    d.status === "active"
+                      ? "d-flag-ok"
+                      : d.status === "verified"
+                      ? "d-flag-info"
+                      : "d-flag-warn"
+                  }`}
+                >
+                  {statusLabel[d.status] ?? d.status}
+                </span>
+                {isAdmin && (
+                  <span className="d-row-actions">
+                    <form action={checkDomain.bind(null, site.slug, d.id)}>
+                      <button className="d-btn d-btn-sm" type="submit">
+                        Verificar agora
+                      </button>
+                    </form>
+                    <ConfirmButton
+                      action={dropDomain.bind(null, site.slug, d.id)}
+                      label="Remover"
+                      confirmLabel="Remover domínio"
+                    />
+                  </span>
+                )}
+              </div>
+              <div className="d-table-wrap">
+                <table className="d-table d-dns">
+                  <thead>
+                    <tr>
+                      <th>Tipo</th>
+                      <th>Nome</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>TXT</td>
+                      <td>
+                        <code>_vitrine.{d.host}</code>
+                      </td>
+                      <td>
+                        <CopyText text={d.token} />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>CNAME</td>
+                      <td>
+                        <code>{d.host}</code>
+                      </td>
+                      <td>
+                        <CopyText text={PLATFORM_TARGET} />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="d-muted d-small">
+                {d.last_check
+                  ? `Última verificação ${timeAgo(d.last_check)}. `
+                  : "Ainda não verificado. "}
+                {d.last_error}
+                {d.host.split(".").length === 2 &&
+                  " Domínio sem www não aceita CNAME: use um registro A com o IP da plataforma, ou o recurso ALIAS do seu provedor de DNS."}
+              </p>
+            </div>
+          ))}
+          {isAdmin && (
+            <div className="d-card-foot">
+              <InlineForm
+                action={newDomain.bind(null, site.slug)}
+                submit="Adicionar domínio"
+                pendingText="Adicionando…"
+              >
+                <input
+                  id="domain-host"
+                  name="host"
+                  placeholder="www.cliente.com.br"
+                  required
+                  aria-label="Domínio"
+                />
+              </InlineForm>
+              <p className="d-muted d-small">
+                O certificado HTTPS é emitido automaticamente pela hospedagem
+                assim que o DNS aponta para a plataforma.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {tab === "equipe" && (
+        <section className="d-card">
+          <h2>Quem edita este site</h2>
+          <ul className="d-roles-help">
+            <li>
+              <strong>Administrador</strong> edita, publica, restaura versões,
+              cria páginas, liga domínios e convida pessoas.
+            </li>
+            <li>
+              <strong>Editor</strong> edita textos e imagens e envia para
+              revisão. Não publica nem apaga blocos.
+            </li>
+          </ul>
+          <table className="d-table">
+            <tbody>
+              {listMembers(site.id).map((m) => (
+                <tr key={m.id}>
+                  <td>
+                    <strong>{m.name}</strong>
+                    <small>{m.email}</small>
+                  </td>
+                  <td>
+                    <span className="d-badge">
+                      {m.role === "admin" ? "Administrador" : "Editor"}
+                    </span>
+                  </td>
+                  <td className="d-row-actions">
+                    {isAdmin && m.id !== user.id && (
+                      <ConfirmButton
+                        action={revoke.bind(null, site.slug, m.id)}
+                        label="Remover acesso"
+                        confirmLabel="Remover"
+                      />
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {isAdmin && (
+            <div className="d-card-foot">
+              <h3>Dar acesso</h3>
+              <InlineForm
+                action={invite.bind(null, site.slug)}
+                submit="Dar acesso"
+                pendingText="Salvando…"
+              >
+                <input
+                  id="member-name"
+                  name="name"
+                  placeholder="Nome"
+                  aria-label="Nome"
+                />
+                <input
+                  id="member-email"
+                  name="email"
+                  type="email"
+                  placeholder="email@cliente.com.br"
+                  required
+                  aria-label="E-mail"
+                />
+                <select
+                  id="member-role"
+                  name="role"
+                  aria-label="Papel"
+                  defaultValue="editor"
+                >
+                  <option value="editor">Editor</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </InlineForm>
+            </div>
+          )}
+        </section>
+      )}
+
+      {tab === "contatos" && (
+        <section className="d-card">
+          <h2>Contatos recebidos</h2>
+          <p className="d-muted">
+            Mensagens enviadas pelo bloco &quot;Formulário de contato&quot; do
+            site.
+          </p>
+          {(() => {
+            const leads = listLeads(site.id);
+            if (!leads.length)
+              return <p className="d-empty-inline">Nenhum contato ainda.</p>;
+            return (
+              <div className="d-table-wrap">
+                <table className="d-table">
+                  <thead>
+                    <tr>
+                      <th>Quando</th>
+                      <th>Nome</th>
+                      <th>Contato</th>
+                      <th>Mensagem</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.map((l) => (
+                      <tr key={l.id}>
+                        <td className="d-muted">{timeAgo(l.created_at)}</td>
+                        <td>
+                          <strong>{l.name}</strong>
+                          <small>{l.page}</small>
+                        </td>
+                        <td>
+                          {l.email}
+                          {l.phone && <small>{l.phone}</small>}
+                        </td>
+                        <td className="d-message">{l.message}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+        </section>
+      )}
+
+      {tab === "atividade" && (
+        <section className="d-card">
+          <h2>Atividade</h2>
+          <ol className="d-activity">
+            {listActivity(site.id).map((a, i) => (
+              <li key={i}>
+                <span className={`d-dot d-dot-${a.kind}`} aria-hidden />
+                <span>
+                  <strong>{a.who ?? "Sistema"}</strong> {a.detail}
+                </span>
+                <time className="d-muted">{timeAgo(a.created_at)}</time>
+              </li>
+            ))}
+          </ol>
+          {role === "owner" && (
+            <div className="d-card-foot d-danger-zone">
+              <h3>Excluir site</h3>
+              <p className="d-muted d-small">
+                Apaga o site, todas as páginas, versões, domínios e contatos.
+                Não dá para desfazer.
+              </p>
+              <ConfirmButton
+                action={destroySite.bind(null, site.slug)}
+                label="Excluir este site"
+                confirmLabel="Excluir definitivamente"
+                className="d-btn d-btn-danger d-btn-sm"
+              />
+            </div>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
