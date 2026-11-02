@@ -72,6 +72,27 @@ O esquema dos blocos é a fonte única: gera os campos do editor, a validação 
 
 O prompt de sistema traz uma direção de arte (ritmo das seções, títulos curtos, contraste, uma ideia por seção) e uma biblioteca de imagens verificadas. Ele é estável e vai com cache. A IA está instruída a não inventar fatos verificáveis sobre negócios reais e a marcar dados que faltam como provisórios.
 
+### Motor Claude Code (opcional)
+
+Em vez do laço próprio de ferramentas, a edição pode rodar no **Claude Code** (Claude Agent SDK) dentro do seu servidor. Ele continua usando a OpenRouter e o modelo escolhido para cada cliente, e passa a ler **skills do projeto**:
+
+```sh
+VITRINE_AI_ENGINE=claude-code
+```
+
+- **Skills em `ai/claude/.claude/skills/`.** `direcao-de-arte` (o ritmo das seções, os títulos, o contraste) e `sobre-a-agencia` (tom de voz, palavras proibidas, padrões de texto da agência). Edite o `SKILL.md` e a próxima chamada da IA já usa a versão nova, sem deploy. Para uma skill nova, crie a pasta e acrescente o nome em `SKILL_NAMES` (`ai/claude-code.ts`). Só as skills listadas ali ficam visíveis para a IA.
+- **As mesmas seis ferramentas e a mesma validação** de página. O resto do pipeline não muda: a página muda ao vivo, vira um passo de desfazer e nunca publica sozinha.
+- **Sem acesso a nada além do site.** O processo não tem terminal, arquivos, internet nem outros servidores MCP, e recebe só a chave da OpenRouter (nenhum outro segredo do servidor). Mesmo assim, não coloque segredos nas skills.
+- **Créditos pelo consumo real.** Cada resposta do modelo é cobrada pelos tokens informados, com leitura de cache pesando 0,1x e escrita de cache 1,25x. Com o motor ligado, a primeira chamada de cada pedido custa mais (monta o cache) e as seguintes custam pouco.
+- **Autenticação por chave de API (OpenRouter).** Não use a assinatura Claude Pro/Max para atender clientes: ela é de uso pessoal.
+- **Precisa de servidor sempre ligado** (VPS ou container), porque o Claude Code roda como processo. Não funciona em hospedagem serverless.
+
+| Variável                 | Para quê                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| `VITRINE_AI_ENGINE`      | `claude-code` liga este motor. Vazio mantém o motor padrão.                               |
+| `VITRINE_SKILLS_DIR`     | Pasta que contém `.claude/skills` (padrão `ai/claude`, relativa à pasta do app).          |
+| `VITRINE_AI_SMALL_MODEL` | Modelo barato para tarefas internas do Claude Code (padrão `anthropic/claude-haiku-5.5`). |
+
 ### Modelo por cliente e créditos
 
 Todas as chamadas passam pela OpenRouter, então qualquer modelo dela serve. No painel, a agência abre **IA e créditos** (menu superior) e:

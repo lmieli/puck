@@ -171,6 +171,11 @@ export async function runAgent(
     return out;
   }
 
+  if (process.env.VITRINE_AI_ENGINE === "claude-code") {
+    const { runClaudeCodeAgent } = await import("./claude-code.ts");
+    return runClaudeCodeAgent(input, emit, signal);
+  }
+
   const model = input.credits?.model ?? FALLBACK_MODEL_ID;
   const cacheable = model.startsWith("anthropic/");
   let page = input.page;
