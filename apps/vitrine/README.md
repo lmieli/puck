@@ -204,7 +204,7 @@ cp apps/vitrine/.env.example apps/vitrine/.env.local   # e preencha OPENROUTER_A
 pnpm --filter vitrine dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000). O banco é criado em `apps/vitrine/data/` no primeiro acesso, com dois sites de demonstração:
+Abra [http://localhost:3000](http://localhost:3000). O banco é criado em `apps/vitrine/data/` no primeiro acesso, com dois sites de demonstração e o site de venda do ParkFlow:
 
 | Conta                   | Senha        | Acesso                                     |
 | ----------------------- | ------------ | ------------------------------------------ |
@@ -212,7 +212,13 @@ Abra [http://localhost:3000](http://localhost:3000). O banco é criado em `apps/
 | `cliente@gemini.com.br` | `vitrine123` | Administrador do site Gemini Engenharia    |
 | `editor@gemini.com.br`  | `vitrine123` | Editor do site Gemini (envia para revisão) |
 
-Sites publicados: `/sites/aurora` (lançamento de produto) e `/sites/gemini` (construtora).
+Sites publicados: `/sites/aurora` (lançamento de produto), `/sites/gemini` (construtora) e `/sites/parkflow` (site de venda do ParkFlow).
+
+### Site do ParkFlow
+
+Site de venda do ParkFlow (sistema de gestão de estacionamento), em `lib/parkflow.ts`. Os textos vêm da landing page do próprio produto e só prometem o que ele faz hoje; as imagens são telas de uma base de demonstração com dados fictícios, em `public/modelos/parkflow/` (servidas em qualquer domínio). Uma página só: abertura com o painel, recursos com as telas, como funciona, para quem, perguntas frequentes e o bloco Cadastro "Pedido de demonstração" (nome, WhatsApp, estacionamento, cidade, vagas e mensagem, com consentimento da LGPD), que grava na aba Contatos.
+
+O site é criado já publicado **uma única vez por banco**, também em bancos que já existiam (`ensureParkflowSite`, marcado na tabela `seeded_sites`). Se a agência apagá-lo, ele não volta; se já houver outro site no endereço `parkflow`, nada é alterado. Depois de criado, é um site como qualquer outro: edite no editor ou pela IA. Falta preencher o WhatsApp (aba WhatsApp), o domínio próprio e, se quiser, o rastreamento.
 
 Sem `OPENROUTER_API_KEY`, tudo funciona menos a IA, e o painel avisa o que falta. `VITRINE_AI_MOCK=1` liga um modo de teste que entende poucas frases e serve só para testar o fluxo sem chave.
 

@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { DEFAULT_MODELS, RETIRED_DEFAULT_MODELS } from "../ai/pricing";
 import { INDEXES, SCHEMA } from "./schema";
-import { seed } from "./seed";
+import { ensureParkflowSite, seed } from "./seed";
 
 export const DATA_DIR =
   process.env.VITRINE_DATA_DIR ||
@@ -105,6 +105,7 @@ export function db(): Database.Database {
     conn.exec(INDEXES);
     globalThis.__vitrineDb = conn;
     seed(conn);
+    ensureParkflowSite(conn);
   }
   return globalThis.__vitrineDb;
 }

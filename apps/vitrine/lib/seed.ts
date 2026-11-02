@@ -2,6 +2,12 @@ import type Database from "better-sqlite3";
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import type { PageData } from "../ai/page-ops.ts";
 import { buildTemplate, type TemplateId } from "./templates.ts";
+import {
+  PARKFLOW_NAME,
+  PARKFLOW_SLUG,
+  parkflowPages,
+  parkflowSeo,
+} from "./parkflow.ts";
 
 function hash(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -152,6 +158,53 @@ function geminiPages() {
     }
   }
   return pages;
+}
+
+/**
+ * Cria o site de venda do ParkFlow uma única vez por banco, inclusive em bancos
+ * que já existiam antes dele. Se a agência apagar o site depois, ele não volta
+ * (a marca fica em seeded_sites). Se já houver outro site com o mesmo endereço,
+ * nada é criado nem alterado.
+ */
+export function ensureParkflowSite(conn: Database.Database) {
+  conn.exec(
+    "CREATE TABLE IF NOT EXISTS seeded_sites (slug TEXT PRIMARY KEY, created_at TEXT NOT NULL DEFAULT (datetime('now')))"
+  );
+  const done = conn
+    .prepare("SELECT 1 FROM seeded_sites WHERE slug = ?")
+    .get(PARKFLOW_SLUG);
+  if (done) return null;
+  const owner = conn
+    .prepare(
+      "SELECT id FROM users WHERE is_super_admin = 1 ORDER BY created_at LIMIT 1"
+    )
+    .get() as { id: string } | undefined;
+  if (!owner) return null;
+  return conn.transaction(() => {
+    conn
+      .prepare("INSERT INTO seeded_sites (slug) VALUES (?)")
+      .run(PARKFLOW_SLUG);
+    const taken = conn
+      .prepare("SELECT 1 FROM sites WHERE slug = ?")
+      .get(PARKFLOW_SLUG);
+    if (taken) return null;
+    const id = insertSite(conn, {
+      slug: PARKFLOW_SLUG,
+      name: PARKFLOW_NAME,
+      template: "blank",
+      pages: parkflowPages(),
+      authorId: owner.id,
+    });
+    conn
+      .prepare("UPDATE sites SET seo = ? WHERE id = ?")
+      .run(JSON.stringify(parkflowSeo()), id);
+    conn
+      .prepare(
+        "INSERT INTO activity (site_id, user_id, kind, detail) VALUES (?, ?, 'site', ?)"
+      )
+      .run(id, owner.id, "Site de venda do ParkFlow criado e publicado");
+    return id;
+  })();
 }
 
 export function seed(conn: Database.Database) {

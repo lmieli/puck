@@ -18,7 +18,13 @@ export function proxy(req: NextRequest) {
     host === ROOT ||
     host === `app.${ROOT}`;
   if (isApp) return NextResponse.next();
-  if (pathname.startsWith("/api/public") || pathname.startsWith("/media/"))
+  // /modelos/ = imagens fixas dos sites de modelo (public/modelos), iguais em
+  // qualquer domínio.
+  if (
+    pathname.startsWith("/api/public") ||
+    pathname.startsWith("/media/") ||
+    pathname.startsWith("/modelos/")
+  )
     return NextResponse.next();
   // AI agents read Markdown: /page.md, or the page address with
   // "Accept: text/markdown" (browsers always ask for text/html too).
