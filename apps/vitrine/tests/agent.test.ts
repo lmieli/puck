@@ -132,7 +132,7 @@ test("agent streams tool calls, bills every turn and recovers from a tool error"
       page,
       selectedId: heroId,
       credits: {
-        model: "anthropic/claude-sonnet-4.5",
+        model: "anthropic/claude-sonnet-5.5",
         remaining: () => balance,
         charge: (u) => {
           const cost = costCredits(price, u.inputTokens, u.outputTokens);
@@ -151,7 +151,7 @@ test("agent streams tool calls, bills every turn and recovers from a tool error"
   assert.equal(captured.length, 3, "three model turns");
 
   const first = captured[0];
-  assert.equal(first.body.model, "anthropic/claude-sonnet-4.5");
+  assert.equal(first.body.model, "anthropic/claude-sonnet-5.5");
   assert.equal(first.headers.authorization, "Bearer test-key");
   assert.equal(first.body.stream, true);
   assert.deepEqual(first.body.stream_options, { include_usage: true });
@@ -214,7 +214,7 @@ test("agent stops when credits run out and keeps what was already applied", asyn
       instruction: "Mude o título",
       page,
       credits: {
-        model: "openai/gpt-4o-mini",
+        model: "openai/gpt-6.1-terra",
         remaining: () => balance,
         charge: (u) => {
           const cost = costCredits(
@@ -233,7 +233,7 @@ test("agent stops when credits run out and keeps what was already applied", asyn
   server.close();
 
   assert.equal(captured.length, 1, "no second model call without credits");
-  assert.equal(captured[0].body.model, "openai/gpt-4o-mini");
+  assert.equal(captured[0].body.model, "openai/gpt-6.1-terra");
   assert.equal(
     captured[0].body.messages[0].content,
     captured[0].body.messages[0].content as string,

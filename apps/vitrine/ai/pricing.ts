@@ -17,7 +17,10 @@ export function costCredits(
   return Math.max(1, Math.ceil(raw));
 }
 
-/** Starting catalogue. Prices are examples (1 credit = US$ 0.001): adjust them. */
+/**
+ * Starting catalogue. Prices are examples (1 credit = US$ 0.001, OpenRouter's
+ * price with no margin): adjust them.
+ */
 export const DEFAULT_MODELS: {
   id: string;
   label: string;
@@ -25,30 +28,44 @@ export const DEFAULT_MODELS: {
   outPerMtok: number;
 }[] = [
   {
-    id: "anthropic/claude-sonnet-4.5",
-    label: "Claude Sonnet (equilibrado)",
-    inPerMtok: 3000,
-    outPerMtok: 15000,
+    id: "anthropic/claude-sonnet-5.5",
+    label: "Claude Sonnet 5.5 (equilibrado)",
+    inPerMtok: 2000,
+    outPerMtok: 10000,
   },
   {
-    id: "anthropic/claude-opus-4.1",
-    label: "Claude Opus (máxima qualidade)",
-    inPerMtok: 15000,
-    outPerMtok: 75000,
+    id: "anthropic/claude-opus-5.5",
+    label: "Claude Opus 5.5 (máxima qualidade)",
+    inPerMtok: 4000,
+    outPerMtok: 20000,
   },
   {
-    id: "google/gemini-2.5-flash",
-    label: "Gemini Flash (rápido e barato)",
-    inPerMtok: 300,
-    outPerMtok: 2500,
+    id: "openai/gpt-6.1-terra",
+    label: "GPT-6.1 Terra (rápido)",
+    inPerMtok: 1000,
+    outPerMtok: 5000,
   },
   {
-    id: "openai/gpt-4o-mini",
-    label: "GPT-4o mini (econômico)",
-    inPerMtok: 150,
-    outPerMtok: 600,
+    id: "google/gemini-3.8-flash",
+    label: "Gemini 3.8 Flash (rápido)",
+    inPerMtok: 825,
+    outPerMtok: 4125,
+  },
+  {
+    id: "anthropic/claude-haiku-5.5",
+    label: "Claude Haiku 5.5 (econômico)",
+    inPerMtok: 100,
+    outPerMtok: 500,
   },
 ];
 
+/** Catalogue shipped before the 5.x models; disabled on upgrade when unused. */
+export const RETIRED_DEFAULT_MODELS = [
+  "anthropic/claude-sonnet-4.5",
+  "anthropic/claude-opus-4.1",
+  "google/gemini-2.5-flash",
+  "openai/gpt-4o-mini",
+];
+
 export const FALLBACK_MODEL_ID =
-  process.env.VITRINE_AI_MODEL || "anthropic/claude-sonnet-4.5";
+  process.env.VITRINE_AI_MODEL || "anthropic/claude-sonnet-5.5";

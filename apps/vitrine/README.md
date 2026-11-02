@@ -82,6 +82,8 @@ Todas as chamadas passam pela OpenRouter, então qualquer modelo dela serve. No 
 
 Cada chamada ao modelo é cobrada pelos tokens que o provedor informou (entrada e saída), arredondando para cima, com mínimo de 1 crédito. O saldo aparece no painel de IA do editor e cai a cada passo do agente. Com saldo zero a IA é bloqueada antes de chamar o modelo e, se acabar no meio de um pedido, o que já foi feito fica no rascunho. Todo uso fica registrado (modelo, tokens, créditos, quem pediu) e administradores do cliente veem o próprio extrato na aba "IA e créditos" do site. Sites novos recebem `VITRINE_FREE_CREDITS` (padrão 1000).
 
+O catálogo inicial traz Claude Sonnet 5.5 (padrão), Claude Opus 5.5, GPT-6.1 Terra, Gemini 3.8 Flash e Claude Haiku 5.5. Em bancos criados com o catálogo antigo, o servidor adiciona esses modelos uma única vez na inicialização e desativa os antigos (Claude Sonnet 4.5, Claude Opus 4.1, Gemini 2.5 Flash e GPT-4o mini) que nenhum cliente usa. Clientes que escolheram um modelo antigo continuam com ele até a agência trocar.
+
 Os preços iniciais são exemplos (1 crédito = US$ 0,001, sem margem): confira os preços atuais na OpenRouter e defina os seus acima do custo. Uma chamada interrompida pelo usuário só é cobrada se o provedor já tiver informado o uso.
 
 ## Rodar

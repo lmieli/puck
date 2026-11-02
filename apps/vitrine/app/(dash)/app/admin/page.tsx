@@ -145,7 +145,7 @@ export default async function AdminPage({
         <h2>Modelos disponíveis</h2>
         <p className="d-muted">
           Use o identificador do modelo na OpenRouter (por exemplo{" "}
-          <code>anthropic/claude-sonnet-4.5</code>). O preço é em créditos por 1
+          <code>anthropic/claude-sonnet-5.5</code>). O preço é em créditos por 1
           milhão de tokens, separado para entrada e saída: defina acima do custo
           do provedor para ter margem. Os valores iniciais são exemplos (1
           crédito = US$ 0,001 sem margem) e precisam ser conferidos na

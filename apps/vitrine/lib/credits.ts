@@ -56,7 +56,7 @@ export function saveModel(
   if (!MODEL_ID.test(id))
     throw new HttpError(
       400,
-      'Use o identificador da OpenRouter, como "anthropic/claude-sonnet-4.5".'
+      'Use o identificador da OpenRouter, como "anthropic/claude-sonnet-5.5".'
     );
   if (!m.label.trim()) throw new HttpError(400, "Dê um nome ao modelo.");
   const inP = Math.round(m.inPerMtok);

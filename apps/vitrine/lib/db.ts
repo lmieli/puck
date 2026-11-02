@@ -2,7 +2,7 @@ import "server-only";
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
-import { DEFAULT_MODELS } from "../ai/pricing";
+import { DEFAULT_MODELS, RETIRED_DEFAULT_MODELS } from "../ai/pricing";
 import { seed } from "./seed";
 
 const DATA_DIR =
@@ -156,6 +156,35 @@ function migrate(conn: Database.Database) {
     for (const m of DEFAULT_MODELS)
       ins.run(m.id, m.label, m.inPerMtok, m.outPerMtok);
   }
+  upgradeModelCatalog(conn);
+}
+
+// Version of the default model catalogue stored in PRAGMA user_version.
+const MODEL_CATALOG_VERSION = 1;
+
+/**
+ * Brings databases seeded with an older catalogue up to date, once: adds the
+ * new default models (keeping any the agency already edited) and disables the
+ * retired defaults that no site uses. Sites that chose a retired model keep
+ * it until the agency switches them.
+ */
+function upgradeModelCatalog(conn: Database.Database) {
+  const version = conn.pragma("user_version", { simple: true }) as number;
+  if (version >= MODEL_CATALOG_VERSION) return;
+  const ins = conn.prepare(
+    `INSERT OR IGNORE INTO ai_models (id, label, in_per_mtok, out_per_mtok)
+     VALUES (?, ?, ?, ?)`
+  );
+  const retire = conn.prepare(
+    `UPDATE ai_models SET enabled = 0 WHERE id = ?
+     AND NOT EXISTS (SELECT 1 FROM sites WHERE ai_model = ?)`
+  );
+  conn.transaction(() => {
+    for (const m of DEFAULT_MODELS)
+      ins.run(m.id, m.label, m.inPerMtok, m.outPerMtok);
+    for (const id of RETIRED_DEFAULT_MODELS) retire.run(id, id);
+    conn.pragma(`user_version = ${MODEL_CATALOG_VERSION}`);
+  })();
 }
 
 export function db(): Database.Database {
