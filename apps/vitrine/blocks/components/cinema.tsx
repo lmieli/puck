@@ -47,8 +47,8 @@ export function Hero(p: PropsOf<"Hero">) {
     if (!el || !copy || !win) return;
     const measure = () => {
       const share = Math.min(
-        0.72,
-        (copy.offsetHeight + 28) / Math.max(1, win.innerHeight)
+        0.62,
+        (copy.offsetHeight + 22) / Math.max(1, win.innerHeight)
       );
       el.style.setProperty("--copy-share", `${(share * 100).toFixed(2)}%`);
     };

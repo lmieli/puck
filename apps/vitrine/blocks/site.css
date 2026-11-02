@@ -501,7 +501,7 @@ html.v-motion .v-site [data-reveal]:not(.is-in) {
   position: absolute;
   inset: 0 0 auto 0;
   z-index: 2;
-  padding: calc(var(--nav-h) + 6vh) max(22px, 4vw) 0;
+  padding: calc(var(--nav-h) + 4.5vh) max(22px, 4vw) 0;
   text-align: center;
   display: grid;
   justify-items: center;
@@ -512,8 +512,12 @@ html.v-motion .v-site [data-reveal]:not(.is-in) {
 }
 
 .v-hero-copy .v-display {
-  max-width: 14ch;
-  font-size: clamp(40px, 5.8vw, 84px);
+  max-width: 16ch;
+  font-size: clamp(38px, 5vw, 72px);
+}
+
+.v-site[data-font="editorial"] .v-hero-copy .v-display {
+  font-size: clamp(42px, 5.6vw, 80px);
 }
 
 .v-hero-copy .v-lead {
@@ -525,15 +529,18 @@ html.v-motion .v-site [data-reveal]:not(.is-in) {
   margin-top: 22px;
 }
 
+/* The frame itself grows from a card under the headline to the full screen,
+   so the photo is always framed whole (object-fit: cover) instead of being
+   cropped to a thin slice. */
 .v-hero-frame {
   --m: max(0, 1 - var(--p, 0) * 1.8);
   position: absolute;
-  inset: 0;
-  clip-path: inset(
-    calc(var(--m) * var(--copy-share, 55%)) calc(var(--m) * 11%)
-      calc(var(--m) * 5%) calc(var(--m) * 11%) round calc(var(--m) * 36px)
-  );
-  will-change: clip-path;
+  top: calc(var(--m) * var(--copy-share, 50%));
+  left: calc(var(--m) * 5%);
+  right: calc(var(--m) * 5%);
+  bottom: calc(var(--m) * 3.5%);
+  border-radius: calc(var(--m) * 32px);
+  overflow: hidden;
 }
 
 .v-hero-frame::after {
@@ -549,16 +556,16 @@ html.v-motion .v-site [data-reveal]:not(.is-in) {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(calc(1.18 - var(--p, 0) * 0.18));
+  transform: scale(calc(1.06 - var(--p, 0) * 0.06));
   will-change: transform;
 }
 
 @media (max-width: 760px) {
   .v-hero-frame {
-    clip-path: inset(
-      calc(var(--m) * var(--copy-share, 58%)) calc(var(--m) * 5%)
-        calc(var(--m) * 4%) calc(var(--m) * 5%) round calc(var(--m) * 24px)
-    );
+    left: calc(var(--m) * 16px);
+    right: calc(var(--m) * 16px);
+    bottom: calc(var(--m) * 16px);
+    border-radius: calc(var(--m) * 22px);
   }
 
   .v-hero-cinematic {
@@ -1839,7 +1846,7 @@ html.v-motion .v-site [data-reveal]:not(.is-in) {
 
   .v-hero-frame {
     position: relative;
-    clip-path: none;
+    inset: auto;
     height: 70vh;
     margin: 32px max(22px, 4vw) 0;
     border-radius: var(--radius);
