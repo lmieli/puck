@@ -289,3 +289,29 @@ export function SimpleForm({
     </form>
   );
 }
+
+/** A button that runs a server action and shows what it answered ("Enviar teste"). */
+export function ActionButton({
+  action,
+  label,
+  pendingText = "Enviando…",
+}: {
+  action: () => Promise<FormState>;
+  label: string;
+  pendingText?: string;
+}) {
+  const [state, run, pending] = useActionState(
+    async () => action(),
+    undefined as FormState
+  );
+  return (
+    <span className="d-action-result">
+      <form action={run}>
+        <button className="d-btn d-btn-sm" type="submit" disabled={pending}>
+          {pending ? pendingText : label}
+        </button>
+      </form>
+      <Feedback state={state} />
+    </span>
+  );
+}

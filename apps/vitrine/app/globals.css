@@ -1112,3 +1112,83 @@ code {
     display: none;
   }
 }
+
+/* ---------- leads and registrations ---------- */
+.d-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.d-chips a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--d-line);
+  background: var(--d-surface);
+  color: var(--d-ink) !important;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.d-chips a.is-active {
+  background: var(--d-ink);
+  color: #fff !important;
+  border-color: var(--d-ink);
+}
+
+.d-export {
+  margin: 8px 0 12px;
+  font-size: 14px;
+}
+
+.d-answers div {
+  line-height: 1.5;
+}
+
+.d-integration {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-top: 1px solid var(--d-line);
+}
+
+.d-integration small {
+  font-weight: 400;
+}
+
+.d-action-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.d-details {
+  margin-top: 16px;
+}
+
+.d-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.d-code {
+  overflow: auto;
+  max-height: 320px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #101114;
+  color: #e6e6e9;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.d-flag-bad {
+  background: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
+}

@@ -2855,3 +2855,100 @@ html a.v-wa .v-wa-label {
   left: auto;
   right: 12px;
 }
+
+/* ---------- signup (lead capture) form ---------- */
+.v-signup-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.v-signup-stack .v-field-wide,
+.v-signup-fields .v-field-wide {
+  grid-column: 1 / -1;
+}
+
+.v-form select {
+  font: inherit;
+  font-size: 17px;
+  color: var(--fg);
+  background: var(--bg-subtle);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius-sm, 10px) + 2px);
+  padding: 13px 15px;
+}
+
+.v-consent-check {
+  display: flex !important;
+  grid-template-columns: none;
+  align-items: flex-start;
+  gap: 10px !important;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.v-consent-check input {
+  margin-top: 3px;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+}
+
+.v-consent-check a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* the trap: out of sight and out of reach for people */
+.v-hp {
+  position: absolute !important;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.v-form-warn {
+  color: #9a5b00;
+}
+
+.v-signup-compact .v-signup-wrap {
+  max-width: 760px;
+  text-align: center;
+}
+
+.v-signup-compact .v-form-done {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.v-signup-compact .v-form-done .v-btn {
+  justify-self: center;
+}
+
+.v-signup-compact .v-lead {
+  margin-top: 12px;
+}
+
+.v-signup-compact .v-signup-form {
+  margin-top: 28px;
+  padding: clamp(18px, 2.4vw, 26px);
+  text-align: left;
+}
+
+.v-signup-compact .v-signup-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.v-signup-compact .v-signup-form .v-btn {
+  justify-self: center;
+}
+
+.v-form-done .v-btn {
+  margin-top: 8px;
+  justify-self: start;
+}

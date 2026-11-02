@@ -1,4 +1,5 @@
 import { fontOptions } from "./design.ts";
+import { FIELD_KINDS, KIND_INFO } from "../lib/signup.ts";
 
 // Single source of truth for every block: the Puck editor fields, the
 // validation used when the AI edits a page, and the catalog the AI reads are
@@ -972,6 +973,100 @@ export const blocks = {
       address: "",
       button: "Enviar",
       success: "Recebemos sua mensagem. Obrigado!",
+      tone: "subtle",
+    },
+  },
+
+  Signup: {
+    label: "Cadastro",
+    category: "conversao",
+    description:
+      "Formulário para captar contatos (leads) com os campos que o cliente escolher: nome, e-mail, telefone, WhatsApp, empresa, cidade, texto curto ou longo e lista de opções. Formato completo ou compacto (só o campo e o botão, bom para newsletter e lista de espera), caixa de consentimento da LGPD e, ao concluir, pode levar ao WhatsApp. Salva na aba Contatos. Use para lista de espera, newsletter, pré-cadastro e pedido de orçamento.",
+    fields: {
+      formName: {
+        type: "text",
+        label: "Nome do formulário (para filtrar na aba Contatos)",
+      },
+      layout: {
+        type: "select",
+        label: "Formato",
+        options: opt(
+          ["full", "Completo (texto ao lado)"],
+          ["compact", "Compacto (campos em linha)"]
+        ),
+      },
+      eyebrow: { type: "text", label: "Chamada" },
+      title: { type: "text", label: "Título" },
+      text: { type: "textarea", label: "Texto" },
+      fields: {
+        type: "list",
+        label: "Campos do formulário",
+        summary: "label",
+        max: 12,
+        item: {
+          kind: {
+            type: "select",
+            label: "Tipo",
+            options: opt(
+              ...FIELD_KINDS.map(
+                (k) => [k, KIND_INFO[k].option] as [string, string]
+              )
+            ),
+          },
+          label: { type: "text", label: "Pergunta" },
+          required: { type: "boolean", label: "Obrigatório" },
+          options: {
+            type: "textarea",
+            label: "Opções (uma por linha, só para Lista de opções)",
+          },
+        },
+      },
+      button: { type: "text", label: "Texto do botão" },
+      success: { type: "text", label: "Mensagem de sucesso" },
+      consentOn: {
+        type: "boolean",
+        label: "Pedir consentimento (LGPD)",
+        help: "Mostra uma caixa que a pessoa precisa marcar para enviar. O texto aceito fica guardado junto com o contato.",
+      },
+      consentText: { type: "textarea", label: "Texto do consentimento" },
+      consentLink: {
+        type: "text",
+        label: "Link da política de privacidade (opcional)",
+        help: "Endereço completo (https://…) ou de uma página do site (/privacidade).",
+      },
+      after: {
+        type: "select",
+        label: "Depois de enviar",
+        options: opt(
+          ["message", "Mostrar a mensagem de sucesso"],
+          ["whatsapp", "Mostrar a mensagem e um botão para o WhatsApp"]
+        ),
+        help: "O botão usa o número da aba WhatsApp do site.",
+      },
+      afterMessage: {
+        type: "text",
+        label: "Frase pronta no WhatsApp (opcional)",
+      },
+      tone,
+    },
+    defaults: {
+      formName: "Lista de espera",
+      layout: "full",
+      eyebrow: "Cadastro",
+      title: "Entre na lista.",
+      text: "Deixe seus dados e avisamos você primeiro.",
+      fields: [
+        { kind: "name", label: "Nome", required: true, options: "" },
+        { kind: "email", label: "E-mail", required: true, options: "" },
+        { kind: "phone", label: "Telefone", required: false, options: "" },
+      ],
+      button: "Quero entrar",
+      success: "Pronto! Recebemos seu cadastro. Obrigado!",
+      consentOn: true,
+      consentText: "Concordo em compartilhar meus dados para receber contato.",
+      consentLink: "",
+      after: "message",
+      afterMessage: "Olá! Acabei de me cadastrar no site.",
       tone: "subtle",
     },
   },

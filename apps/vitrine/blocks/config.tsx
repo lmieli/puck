@@ -36,7 +36,7 @@ import {
   Specs,
   Stats,
 } from "./components/content";
-import { Contact, Cta } from "./components/conversion";
+import { Contact, Cta, Signup } from "./components/conversion";
 import {
   Cards,
   Divider,
@@ -64,6 +64,7 @@ const renders: Record<BlockName, (props: any) => ReactNode> = {
   Faq,
   Cta,
   Contact,
+  Signup,
   Text,
   Image,
   Cards,

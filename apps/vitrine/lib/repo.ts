@@ -16,7 +16,7 @@ import { appUrl, sendMail } from "./mail";
 import { insertSite } from "./seed";
 import { buildTemplate, type TemplateId } from "./templates";
 import { normalizePath } from "./paths";
-import { sanitizeOrigin } from "./tracking";
+import type { LeadRow } from "./signup";
 
 export type Site = {
   id: string;
@@ -27,6 +27,8 @@ export type Site = {
   credits: number;
   /** JSON of tracking IDs and flags; read it with getTracking(). */
   tracking: string;
+  /** JSON of the submission limits; read it with parseLimits(). */
+  limits: string;
   /** JSON of the WhatsApp bubble; read it with getWhatsApp(). */
   whatsapp: string;
   /** Free <head> code, settable only by platform admins. */
@@ -663,54 +665,34 @@ export function removeMember(user: User, slug: string, userId: string) {
 
 /* -------------------------------- leads ------------------------------- */
 
-export function addLead(
-  siteSlug: string,
-  input: {
-    page: string;
-    name: string;
-    email: string;
-    phone?: string;
-    message?: string;
-    origin?: unknown;
-  }
-) {
-  const site = getSiteBySlug(siteSlug);
-  if (!site) throw new HttpError(404, "Site não encontrado.");
-  const name = input.name?.trim().slice(0, 120);
-  const email = input.email?.trim().slice(0, 200);
-  if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email || ""))
-    throw new HttpError(400, "Informe nome e e-mail válidos.");
-  db()
-    .prepare(
-      "INSERT INTO leads (id, site_id, page, name, email, phone, message, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-    )
-    .run(
-      randomUUID(),
-      site.id,
-      input.page.slice(0, 200),
-      name,
-      email,
-      (input.phone || "").slice(0, 40),
-      (input.message || "").slice(0, 4000),
-      JSON.stringify(sanitizeOrigin(input.origin))
-    );
+/** Leads of a site, newest first. `form` filters by form name ("" = the classic contact form). */
+export function listLeads(
+  siteId: string,
+  form: string | null = null,
+  limit = 500
+): LeadRow[] {
+  const rows =
+    form === null
+      ? db()
+          .prepare(
+            "SELECT * FROM leads WHERE site_id = ? ORDER BY created_at DESC, id LIMIT ?"
+          )
+          .all(siteId, limit)
+      : db()
+          .prepare(
+            "SELECT * FROM leads WHERE site_id = ? AND form = ? ORDER BY created_at DESC, id LIMIT ?"
+          )
+          .all(siteId, form, limit);
+  return rows as LeadRow[];
 }
 
-export function listLeads(siteId: string) {
+/** The forms a site has received leads from, with how many each. */
+export function listLeadForms(siteId: string) {
   return db()
     .prepare(
-      "SELECT * FROM leads WHERE site_id = ? ORDER BY created_at DESC LIMIT 500"
+      "SELECT form, COUNT(*) AS n FROM leads WHERE site_id = ? GROUP BY form ORDER BY n DESC, form"
     )
-    .all(siteId) as {
-    id: string;
-    page: string;
-    name: string;
-    email: string;
-    phone: string;
-    message: string;
-    origin: string;
-    created_at: string;
-  }[];
+    .all(siteId) as { form: string; n: number }[];
 }
 
 /* ------------------------------- activity ----------------------------- */

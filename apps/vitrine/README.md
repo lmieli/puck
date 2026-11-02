@@ -8,19 +8,20 @@ Construída sobre o editor [Puck](../../packages/core) deste repositório. A IA 
 
 ## O que o produto faz
 
-| Área                | Recursos                                                                                                                                                                                                   |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Vários clientes** | Cada site é um cliente (tenant). Usuários têm papel por site. A agência vê todos; o cliente só vê o dele.                                                                                                  |
-| **Edição por IA**   | Painel "IA" no editor. A pessoa descreve a mudança e a página muda ao vivo, bloco a bloco. Entende o bloco selecionado ("mude este título"). Cria um site inteiro a partir de uma descrição do negócio.    |
-| **Editor visual**   | Arrastar e soltar, campos em português, envio de imagens, cores, pré-visualização em celular, tablet e computador. Rascunho salvo automaticamente.                                                         |
-| **Publicação**      | Rascunho e publicado separados. Publicar não precisa de deploy. Cada publicação vira uma versão.                                                                                                           |
-| **Histórico**       | Painel "Versões" no editor: abrir qualquer versão no editor ou restaurar (republica sem apagar nada). Desfazer/refazer na sessão.                                                                          |
-| **Papéis**          | Agência (todos os sites), Administrador do site (publica, restaura, domínios, equipe), Editor (edita e envia para revisão; não publica nem apaga blocos). Verificado no servidor em toda chamada.          |
-| **Domínios**        | Domínio próprio do cliente com verificação por registro TXT e checagem de CNAME. Endereço provisório `<site>.<domínio raiz>`.                                                                              |
-| **Contatos**        | O bloco "Formulário de contato" grava as mensagens no painel do cliente (aba Contatos), com limite de envio por IP.                                                                                        |
-| **Rastreamento**    | Meta Pixel, Google Analytics 4, Google Ads, TikTok e Pinterest só com o ID, aviso de cookies (LGPD), conversão ao enviar o formulário, origem da campanha em cada contato e contagem de visitas no painel. |
-| **WhatsApp**        | Balão verde fixo no canto de todas as páginas, com número, mensagem de abertura, texto ao lado do ícone e posição. Os cliques viram evento nas ferramentas de rastreamento.                                |
-| **Atividade**       | Registro de publicações, restaurações, pedidos de revisão, uso da IA, domínios e acessos.                                                                                                                  |
+| Área                | Recursos                                                                                                                                                                                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vários clientes** | Cada site é um cliente (tenant). Usuários têm papel por site. A agência vê todos; o cliente só vê o dele.                                                                                                                                                                                   |
+| **Edição por IA**   | Painel "IA" no editor. A pessoa descreve a mudança e a página muda ao vivo, bloco a bloco. Entende o bloco selecionado ("mude este título"). Cria um site inteiro a partir de uma descrição do negócio.                                                                                     |
+| **Editor visual**   | Arrastar e soltar, campos em português, envio de imagens, cores, pré-visualização em celular, tablet e computador. Rascunho salvo automaticamente.                                                                                                                                          |
+| **Publicação**      | Rascunho e publicado separados. Publicar não precisa de deploy. Cada publicação vira uma versão.                                                                                                                                                                                            |
+| **Histórico**       | Painel "Versões" no editor: abrir qualquer versão no editor ou restaurar (republica sem apagar nada). Desfazer/refazer na sessão.                                                                                                                                                           |
+| **Papéis**          | Agência (todos os sites), Administrador do site (publica, restaura, domínios, equipe), Editor (edita e envia para revisão; não publica nem apaga blocos). Verificado no servidor em toda chamada.                                                                                           |
+| **Domínios**        | Domínio próprio do cliente com verificação por registro TXT e checagem de CNAME. Endereço provisório `<site>.<domínio raiz>`.                                                                                                                                                               |
+| **Contatos**        | O bloco "Formulário de contato" grava as mensagens no painel do cliente (aba Contatos), com limite de envio por IP.                                                                                                                                                                         |
+| **Rastreamento**    | Meta Pixel, Google Analytics 4, Google Ads, TikTok e Pinterest só com o ID, aviso de cookies (LGPD), conversão ao enviar o formulário, origem da campanha em cada contato e contagem de visitas no painel.                                                                                  |
+| **WhatsApp**        | Balão verde fixo no canto de todas as páginas, com número, mensagem de abertura, texto ao lado do ícone e posição. Os cliques viram evento nas ferramentas de rastreamento.                                                                                                                 |
+| **Cadastros**       | Bloco "Cadastro" com os campos que o cliente escolhe, formato completo ou compacto, consentimento da LGPD e botão para o WhatsApp ao concluir. Contatos filtrados por formulário, planilha CSV, aviso por e-mail e webhook (Zapier, Make, n8n), com novas tentativas e limites contra spam. |
+| **Atividade**       | Registro de publicações, restaurações, pedidos de revisão, uso da IA, domínios e acessos.                                                                                                                                                                                                   |
 
 ## Blocos
 
@@ -144,6 +145,36 @@ Aba **WhatsApp** do site (administradores). O cliente digita o número com DDD, 
 - **Rastreamento.** O clique vira `Contact` no Meta e no TikTok, `whatsapp_click` no Google e um evento personalizado no Pinterest, quando essas ferramentas estão configuradas e aceitas. Não conta como Lead do formulário.
 - **Conversão do Google Ads.** Na aba Rastreamento há um rótulo de conversão **só para cliques no WhatsApp**, separado do rótulo do formulário. O sistema recusa o mesmo rótulo nos dois campos, para um contato não contar em dobro. Sem o rótulo, o clique não é conversão.
 - **Contagem própria.** Cada clique entra na aba **Visitas** (cartão "Cliques no WhatsApp" e tabela por origem, como `instagram / social`). Segue as regras das visitas: sem cookies e sem dado pessoal, **não espera o aceite de cookies**, ignora robôs, só conta páginas publicadas e respeita a opção "Contar visitas no painel".
+
+## Cadastros (captação de contatos)
+
+O bloco **Cadastro** capta contatos (leads) para lista de espera, newsletter, pré-cadastro e pedido de orçamento. O bloco **Formulário de contato** continua existindo e usa as mesmas proteções.
+
+**O bloco.** O cliente escolhe os campos (nome, e-mail, telefone, WhatsApp, empresa, cidade, texto curto, texto longo e lista de opções), o rótulo e se cada um é obrigatório. Há dois formatos: **completo** (texto ao lado) e **compacto** (campos em linha, bom para só e-mail). Tem caixa de consentimento da LGPD (o texto aceito fica guardado com o contato) e link da política de privacidade. Ao concluir pode mostrar um botão para o WhatsApp do site com uma frase pronta. Cada formulário tem um **nome** ("Lista de espera", "Newsletter"), usado para filtrar e exportar. A IA também sabe criar e editar esse bloco.
+
+**Aba Contatos.** Filtro por formulário, todas as respostas de cada contato e a origem da campanha. Administradores baixam a planilha CSV (UTF-8 com BOM, `;` para Excel ou `,` para Google Planilhas; células que um programa de planilhas executaria como fórmula são neutralizadas).
+
+**Aba Cadastros** (administradores):
+
+- **Aviso por e-mail** a cada cadastro novo, até 5 endereços. Precisa de `RESEND_API_KEY` e `VITRINE_MAIL_FROM` no servidor; sem eles a aba avisa e nenhuma entrega de e-mail é criada.
+- **Webhook** (até 5): um `POST` em JSON a cada cadastro, para Zapier, Make, n8n e outros, que levam os contatos ao Notion, ao Google Planilhas, a um CRM ou ao Slack. O botão "Enviar teste" confere o destino. O cabeçalho `x-vitrine-signature` traz `sha256=HMAC(chave, timestamp + "." + corpo)`, com a chave mostrada uma única vez ao criar, e `x-vitrine-timestamp` o momento do envio. O formato do JSON aparece na própria aba.
+- **Entregas recentes**: situação de cada envio. O contato é **sempre gravado primeiro**; o envio vem depois, com novas tentativas (30 s, 2 min, 10 min, 1 h e 6 h; 6 tentativas em cerca de um dia). Erros que não adianta repetir (por exemplo, HTTP 404) falham na hora. Depois disso, o botão "Reenviar" refaz a entrega. Se o servidor reiniciar, as entregas pendentes continuam.
+- **Limites de envio** (só a conta de agência): por IP em 10 minutos (padrão 30) e em 24 horas (200), e por formulário em 1 hora (500). Valem para o site todo e ficam no banco, então sobrevivem a reinicializações. Quando um formulário passa do limite por hora, os novos envios são recusados e um alerta aparece na aba Atividade.
+
+**Proteções do envio**, todas no servidor:
+
+- O servidor lê a definição do formulário na **página publicada**, nunca do navegador. Campo que o formulário não pede, campo obrigatório faltando, e-mail ou telefone inválido, opção fora da lista e falta de consentimento são recusados com mensagem clara.
+- **Armadilhas para robôs:** um campo escondido e um tempo mínimo de 2 segundos entre mostrar e enviar. Quem cai nelas recebe um "ok" normal e nada é gravado, para o robô não aprender.
+- **Duplicados:** o mesmo e-mail (ou telefone) no mesmo formulário em 24 horas conta como um contato, sem repetir webhook nem aviso.
+- O IP vem da **última** entrada de `X-Forwarded-For`, a que o seu proxy (Caddy) acrescentou. Entradas anteriores são digitadas pelo visitante e não valem. Não exponha o app sem um proxy confiável na frente.
+- Corpo da requisição limitado a 30 KB.
+
+**Segurança dos webhooks.** O servidor chama endereços digitados por clientes, então só aceita **https público na porta 443**, recusa `localhost`, nomes internos e faixas privadas, e confere **cada endereço** a que o nome resolve (uma resposta interna bloqueia tudo). A conexão vai ao endereço conferido, redirecionamentos não são seguidos, o prazo é de 8 segundos e só 4 KB da resposta são lidos. A URL e a chave de cada webhook ficam **criptografadas** (AES-256-GCM) no banco; a tela mostra só o domínio.
+
+| Variável                         | Para quê                                                                                                                |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `VITRINE_SECRET_KEY`             | Chave que criptografa os segredos (webhooks). **Defina em produção**; sem ela, uma chave é criada em `data/secret.key`. |
+| `VITRINE_ALLOW_PRIVATE_WEBHOOKS` | `1` libera webhooks para endereços locais e `http`. **Só para desenvolvimento e testes.** Nunca em produção.            |
 
 ## Rodar
 

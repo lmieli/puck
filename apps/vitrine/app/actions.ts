@@ -10,6 +10,14 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { saveHeadScript, saveTracking, saveWhatsApp } from "@/lib/analytics";
+import {
+  addEmailRecipient,
+  addWebhook,
+  removeIntegration,
+  retryDelivery,
+  saveLimits,
+  testWebhook,
+} from "@/lib/integrations";
 import { db } from "@/lib/db";
 import { attachDomain, detachDomain } from "@/lib/hosting";
 import {
@@ -350,6 +358,81 @@ export async function saveWhatsAppAction(
       paths: form.getAll("paths").map(String),
     });
     return { ok: "WhatsApp salvo. O balão aparece nas próximas visitas." };
+  });
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+export async function addEmailAction(
+  slug: string,
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(() => {
+    addEmailRecipient(user, slug, String(form.get("email") || ""));
+    return { ok: "Pronto. Esse e-mail recebe um aviso a cada novo cadastro." };
+  });
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+export async function addWebhookAction(
+  slug: string,
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(() => {
+    const { secret } = addWebhook(
+      user,
+      slug,
+      String(form.get("name") || ""),
+      String(form.get("url") || "")
+    );
+    return {
+      ok: "Webhook adicionado. Copie a chave de assinatura agora: ela não aparece de novo. Use-a só se quiser conferir a autenticidade dos envios.",
+      link: secret,
+    };
+  });
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+export async function removeIntegrationAction(slug: string, id: string) {
+  const user = await requireUser();
+  await guard(() => removeIntegration(user, slug, id));
+  revalidatePath(`/app/s/${slug}`);
+}
+
+export async function testWebhookAction(
+  slug: string,
+  id: string
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(async () => {
+    const r = await testWebhook(user, slug, id);
+    return r.ok ? { ok: r.message } : { error: r.message };
+  });
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+export async function retryDeliveryAction(slug: string, id: string) {
+  const user = await requireUser();
+  await guard(() => retryDelivery(user, slug, id));
+  revalidatePath(`/app/s/${slug}`);
+}
+
+export async function saveLimitsAction(
+  slug: string,
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(() => {
+    saveLimits(user, slug, Object.fromEntries(form));
+    return { ok: "Limites salvos." };
   });
   revalidatePath(`/app/s/${slug}`);
   return res;

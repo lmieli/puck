@@ -18,6 +18,8 @@ import {
   SimpleForm,
 } from "@/components/dash/forms";
 import { Ledger } from "@/components/dash/Ledger";
+import { CadastrosPanel } from "@/components/dash/CadastrosPanel";
+import { CLASSIC_PARAM, Leads } from "@/components/dash/Leads";
 import { TrackingPanel } from "@/components/dash/TrackingPanel";
 import { WhatsAppPanel } from "@/components/dash/WhatsAppPanel";
 import { Visits } from "@/components/dash/Visits";
@@ -27,8 +29,10 @@ import {
   getWhatsApp,
   viewSummary,
 } from "@/lib/analytics";
-import { sanitizeOrigin, sourceLabel } from "@/lib/tracking";
 import { listLedger, modelForSite, usageSummary } from "@/lib/credits";
+import { listDeliveries, listIntegrations } from "@/lib/integrations";
+import { mailConfigured } from "@/lib/mail";
+import { parseLimits } from "@/lib/ratelimit";
 import { timeAgo } from "@/lib/time";
 import { hostingProvider } from "@/lib/hosting";
 import { atLeast, HttpError, requireUser } from "@/lib/auth";
@@ -36,6 +40,7 @@ import {
   APP_ROOT_DOMAIN,
   listActivity,
   listDomains,
+  listLeadForms,
   listLeads,
   listMembers,
   listPages,
@@ -47,7 +52,7 @@ export const dynamic = "force-dynamic";
 
 type Params = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; form?: string }>;
 };
 
 const tabs = [
@@ -55,12 +60,21 @@ const tabs = [
   ["dominios", "Domínios"],
   ["equipe", "Equipe"],
   ["contatos", "Contatos"],
+  ["cadastros", "Cadastros"],
   ["visitas", "Visitas"],
   ["rastreamento", "Rastreamento"],
   ["whatsapp", "WhatsApp"],
   ["creditos", "IA e créditos"],
   ["atividade", "Atividade"],
 ] as const;
+
+/** Tabs only site administrators see (their content is also checked below). */
+const ADMIN_TABS = new Set([
+  "cadastros",
+  "creditos",
+  "rastreamento",
+  "whatsapp",
+]);
 
 const statusLabel: Record<string, string> = {
   pending: "Aguardando DNS",
@@ -75,7 +89,8 @@ export async function generateMetadata({ params }: Params) {
 export default async function SitePage({ params, searchParams }: Params) {
   const user = await requireUser();
   const { slug } = await params;
-  const tab = (await searchParams).tab ?? "paginas";
+  const query = await searchParams;
+  const tab = query.tab ?? "paginas";
   let ctx;
   try {
     ctx = siteFor(user, slug);
@@ -121,9 +136,7 @@ export default async function SitePage({ params, searchParams }: Params) {
 
       <nav className="d-tabs" aria-label="Seções do site">
         {tabs
-          .filter(
-            ([id]) => (id !== "creditos" && id !== "rastreamento") || isAdmin
-          )
+          .filter(([id]) => !ADMIN_TABS.has(id) || isAdmin)
           .map(([id, label]) => (
             <Link
               key={id}
@@ -430,59 +443,35 @@ export default async function SitePage({ params, searchParams }: Params) {
         </section>
       )}
 
-      {tab === "contatos" && (
-        <section className="d-card">
-          <h2>Contatos recebidos</h2>
-          <p className="d-muted">
-            Mensagens enviadas pelo bloco &quot;Formulário de contato&quot; do
-            site.
-          </p>
-          {(() => {
-            const leads = listLeads(site.id);
-            if (!leads.length)
-              return <p className="d-empty-inline">Nenhum contato ainda.</p>;
-            return (
-              <div className="d-table-wrap">
-                <table className="d-table">
-                  <thead>
-                    <tr>
-                      <th>Quando</th>
-                      <th>Nome</th>
-                      <th>Contato</th>
-                      <th>Mensagem</th>
-                      <th>Origem</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leads.map((l) => (
-                      <tr key={l.id}>
-                        <td className="d-muted">{timeAgo(l.created_at)}</td>
-                        <td>
-                          <strong>{l.name}</strong>
-                          <small>{l.page}</small>
-                        </td>
-                        <td>
-                          {l.email}
-                          {l.phone && <small>{l.phone}</small>}
-                        </td>
-                        <td className="d-message">{l.message}</td>
-                        <td className="d-muted">
-                          {(() => {
-                            let o = {};
-                            try {
-                              o = sanitizeOrigin(JSON.parse(l.origin || "{}"));
-                            } catch {}
-                            return l.origin ? sourceLabel(o) : "—";
-                          })()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            );
-          })()}
-        </section>
+      {tab === "contatos" &&
+        (() => {
+          const formParam = query.form;
+          const active =
+            formParam === undefined
+              ? undefined
+              : formParam === CLASSIC_PARAM
+              ? ""
+              : formParam;
+          return (
+            <Leads
+              slug={site.slug}
+              leads={listLeads(site.id, active ?? null)}
+              forms={listLeadForms(site.id)}
+              active={active}
+              canExport={isAdmin}
+            />
+          );
+        })()}
+
+      {tab === "cadastros" && isAdmin && (
+        <CadastrosPanel
+          slug={site.slug}
+          integrations={listIntegrations(site.id)}
+          deliveries={listDeliveries(site.id)}
+          mailOn={mailConfigured()}
+          limits={parseLimits(site.limits)}
+          isPlatformAdmin={!!user.is_super_admin}
+        />
       )}
 
       {tab === "visitas" && (

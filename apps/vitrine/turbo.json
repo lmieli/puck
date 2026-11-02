@@ -1,8 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "extends": [
-    "//"
-  ],
+  "extends": ["//"],
   "tasks": {
     "build": {
       "env": [
@@ -13,7 +11,8 @@
         "VERCEL_PROJECT_ID",
         "VERCEL_TEAM_ID",
         "VERCEL_TOKEN",
-        "VITRINE_*"
+        "VITRINE_*",
+        "NEXT_RUNTIME"
       ]
     },
     "test": {
@@ -25,7 +24,8 @@
         "VERCEL_PROJECT_ID",
         "VERCEL_TEAM_ID",
         "VERCEL_TOKEN",
-        "VITRINE_*"
+        "VITRINE_*",
+        "NEXT_RUNTIME"
       ]
     }
   }
