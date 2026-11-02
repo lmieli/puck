@@ -18,6 +18,8 @@ import {
   type DeliveryView,
   type IntegrationView,
 } from "@/lib/integrations";
+import { NotionPanel } from "@/components/dash/NotionPanel";
+import type { NotionView, SiteForm } from "@/lib/notion-admin";
 import type { Limits } from "@/lib/ratelimit";
 import { webhookPayload, type LeadRow } from "@/lib/signup";
 import { timeAgo } from "@/lib/time";
@@ -53,6 +55,8 @@ const SAMPLE_LEAD: LeadRow = {
 export function CadastrosPanel({
   slug,
   integrations,
+  notion,
+  forms,
   deliveries,
   mailOn,
   limits,
@@ -60,6 +64,8 @@ export function CadastrosPanel({
 }: {
   slug: string;
   integrations: IntegrationView[];
+  notion: NotionView[];
+  forms: SiteForm[];
   deliveries: DeliveryView[];
   mailOn: boolean;
   limits: Limits;
@@ -112,13 +118,15 @@ export function CadastrosPanel({
         )}
       </section>
 
+      <NotionPanel slug={slug} connections={notion} forms={forms} />
+
       <section className="d-card">
         <h2>Webhook (Zapier, Make, n8n e outros)</h2>
         <p className="d-muted">
           A cada cadastro novo enviamos os dados em JSON para o endereço que
-          você colar. É o caminho para levar os contatos ao Notion, ao Google
-          Planilhas, a um CRM ou a um aviso no Slack, usando a ferramenta de
-          automação que você já tem. Só aceitamos endereços https públicos.
+          você colar. É o caminho para levar os contatos ao Google Planilhas, a
+          um CRM ou a um aviso no Slack, usando a ferramenta de automação que
+          você já tem. Só aceitamos endereços https públicos.
         </p>
         {hooks.map((h) => (
           <div key={h.id} className="d-integration">
@@ -219,7 +227,11 @@ export function CadastrosPanel({
                       <td>
                         {d.integration}
                         <small>
-                          {d.kind === "email" ? "e-mail" : "webhook"}
+                          {d.kind === "email"
+                            ? "e-mail"
+                            : d.kind === "notion"
+                            ? "Notion"
+                            : "webhook"}
                         </small>
                       </td>
                       <td>

@@ -19,7 +19,7 @@ export const MAX_WEBHOOKS = 5;
 
 export type IntegrationView = {
   id: string;
-  kind: "email" | "webhook";
+  kind: "email" | "webhook" | "notion";
   name: string;
   /** What to show: the address, or the host of the webhook (never the secret path). */
   display: string;
@@ -40,13 +40,15 @@ export function listIntegrations(siteId: string): IntegrationView[] {
       display =
         r.kind === "email"
           ? String(cfg.to)
+          : r.kind === "notion"
+          ? String(cfg.dbTitle ?? "Notion")
           : maskUrl(decrypt(cfg.url, secretKey()));
     } catch {
       display = "(não foi possível ler)";
     }
     return {
       id: r.id,
-      kind: r.kind as "email" | "webhook",
+      kind: r.kind as IntegrationView["kind"],
       name: r.name,
       display,
       enabled: !!r.enabled,

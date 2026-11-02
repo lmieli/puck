@@ -34,6 +34,7 @@ import {
 } from "@/lib/analytics";
 import { listLedger, modelForSite, usageSummary } from "@/lib/credits";
 import { listDeliveries, listIntegrations } from "@/lib/integrations";
+import { listNotion, siteForms } from "@/lib/notion-admin";
 import { mailConfigured } from "@/lib/mail";
 import { parseLimits } from "@/lib/ratelimit";
 import { timeAgo } from "@/lib/time";
@@ -472,6 +473,8 @@ export default async function SitePage({ params, searchParams }: Params) {
         <CadastrosPanel
           slug={site.slug}
           integrations={listIntegrations(site.id)}
+          notion={listNotion(site.id)}
+          forms={siteForms(site.id)}
           deliveries={listDeliveries(site.id)}
           mailOn={mailConfigured()}
           limits={parseLimits(site.limits)}

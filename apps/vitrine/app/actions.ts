@@ -12,6 +12,12 @@ import {
 import { saveHeadScript, saveTracking, saveWhatsApp } from "@/lib/analytics";
 import { saveSeo } from "@/lib/seo-server";
 import {
+  connectNotion,
+  refreshNotion,
+  saveNotion,
+  testNotion,
+} from "@/lib/notion-admin";
+import {
   addEmailRecipient,
   addWebhook,
   removeIntegration,
@@ -455,6 +461,66 @@ export async function saveSeoAction(
       aiTraining: form.has("aiTraining"),
     });
     return { ok: "SEO salvo. Vale para as próximas visitas e rastreadores." };
+  });
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+/* ------------------------------- Notion ------------------------------- */
+
+export async function connectNotionAction(
+  slug: string,
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(async () => {
+    await connectNotion(user, slug, {
+      name: String(form.get("name") || ""),
+      token: String(form.get("token") || ""),
+      database: String(form.get("database") || ""),
+      scope: String(form.get("scope") || "all"),
+    });
+    return {
+      ok: "Conectado. Confira abaixo quais respostas vão em cada coluna e salve.",
+    };
+  });
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+export async function saveNotionAction(
+  slug: string,
+  id: string,
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(() => ({ ok: saveNotion(user, slug, id, form) }));
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+export async function refreshNotionAction(
+  slug: string,
+  id: string
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(async () => ({
+    ok: await refreshNotion(user, slug, id),
+  }));
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+export async function testNotionAction(
+  slug: string,
+  id: string
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(async () => {
+    const r = await testNotion(user, slug, id);
+    return r.ok ? { ok: r.message } : { error: r.message };
   });
   revalidatePath(`/app/s/${slug}`);
   return res;

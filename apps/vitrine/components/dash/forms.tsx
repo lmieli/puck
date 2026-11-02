@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useFormStatus } from "react-dom";
 import type { FormState } from "@/app/actions";
 
@@ -10,12 +16,16 @@ function Submit({
   children,
   pendingText,
   className = "d-btn d-btn-primary",
+  pending: pendingOverride,
 }: {
   children: React.ReactNode;
   pendingText: string;
   className?: string;
+  /** For forms submitted by hand, where useFormStatus does not see the submit. */
+  pending?: boolean;
 }) {
-  const { pending } = useFormStatus();
+  const status = useFormStatus();
+  const pending = pendingOverride ?? status.pending;
   return (
     <button type="submit" className={className} disabled={pending}>
       {pending ? pendingText : children}
@@ -279,18 +289,37 @@ export function SimpleForm({
   submitClass?: string;
 }) {
   const [state, run] = useActionState(action, undefined);
+  const [pending, startTransition] = useTransition();
+  const ref = useRef<HTMLFormElement>(null);
+  // React clears a form after any action, even a failed one, which would make
+  // people retype a long token because of a typo. Submit by hand instead and
+  // clear the fields only after a success.
+  useEffect(() => {
+    if (state?.ok && !state.error) ref.current?.reset();
+  }, [state]);
   return (
-    <form action={run} className={className}>
+    <form
+      ref={ref}
+      className={className}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        startTransition(() => run(data));
+      }}
+    >
       {children}
       <Feedback state={state} />
-      <Submit pendingText={pendingText} className={submitClass}>
+      <Submit
+        pendingText={pendingText}
+        className={submitClass}
+        pending={pending}
+      >
         {submit}
       </Submit>
     </form>
   );
 }
 
-/** A button that runs a server action and shows what it answered ("Enviar teste"). */
 export function ActionButton({
   action,
   label,

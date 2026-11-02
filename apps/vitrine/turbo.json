@@ -5,6 +5,7 @@
     "build": {
       "env": [
         "OPENROUTER_API_KEY",
+        "NOTION_API_BASE",
         "OPENROUTER_BASE_URL",
         "AWS_*",
         "RESEND_API_KEY",
@@ -18,6 +19,7 @@
     "test": {
       "env": [
         "OPENROUTER_API_KEY",
+        "NOTION_API_BASE",
         "OPENROUTER_BASE_URL",
         "AWS_*",
         "RESEND_API_KEY",

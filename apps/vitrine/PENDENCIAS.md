@@ -10,7 +10,8 @@ Itens combinados e ainda não feitos. Marque com `[x]` e mova para o README quan
 
 ## Cadastros
 
-- [ ] **Notion direto.** Hoje o Notion entra por webhook (Zapier, Make, n8n). A integração direta pediria ao cliente só o token da integração e o banco: criamos uma página por contato, com os campos do formulário virando colunas. A base já existe (fila de entregas com novas tentativas, segredos criptografados, painel de entregas); falta o destino `notion`, o mapeamento de colunas (lendo o esquema do banco do Notion) e validar com uma conta de teste.
+- [x] ~~**Notion direto.**~~ Feito: conexão por cliente e por formulário, com mapeamento de colunas (ver README). Falta validar com uma conta real do Notion (os testes usam um servidor falso) e ver abaixo o que ficou de fora.
+- [ ] **Notion, o que ficou de fora:** evitar linha duplicada se o Notion criar a página mas a resposta se perder e a entrega for repetida (hoje seria preciso um campo de código do cadastro e uma consulta antes de criar); colunas de relação, pessoas e arquivos; bancos com várias fontes de dados (API nova do Notion, usamos a versão 2022-06-28); OAuth do Notion no lugar do token manual.
 - [ ] **Google Planilhas direto.** Mesmo caminho: uma conta de serviço da agência (um "robô") que o cliente convida na planilha, sem o botão "Entrar com Google" por cliente, que exige verificação do app pelo Google. Precisa de um projeto no Google Cloud (a API do Google Planilhas é gratuita) e validação com uma planilha de teste.
 - [ ] **Validar o aviso por e-mail com o serviço real.** Foi testado o caminho de erro (servidor sem e-mail) e o conteúdo da mensagem nos testes automáticos, mas não um envio de verdade pela Resend.
 - [ ] **Captcha só em emergência** (Cloudflare Turnstile, sem rastreamento), ligado por site quando ele sofrer um ataque. Depende de chave.

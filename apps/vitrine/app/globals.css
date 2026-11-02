@@ -1245,3 +1245,64 @@ code {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
 }
+
+/* ---------- Notion ---------- */
+
+.d-notion {
+  border: 1px solid var(--d-line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 14px 0;
+}
+
+.d-notion > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.d-notion[open] > summary {
+  margin-bottom: 14px;
+}
+
+.d-notion-actions {
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.d-map {
+  display: grid;
+  gap: 8px;
+}
+
+.d-map-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(200px, 1.4fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.d-map-row small {
+  display: block;
+}
+
+.d-map-row select {
+  font: 400 15px/1.4 var(--d-font);
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--d-line);
+  background: var(--d-surface);
+  color: var(--d-ink);
+  min-width: 0;
+}
+
+.d-steps {
+  margin: 8px 0 16px;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+  color: var(--d-muted);
+  font-size: 14px;
+}

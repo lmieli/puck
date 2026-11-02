@@ -12,6 +12,7 @@ import {
   type Handler,
 } from "./deliveries-core";
 import { appUrl, mailConfigured, sendMail } from "./mail";
+import { createLeadPage, readNotionConfig } from "./notion-send";
 import { allowPrivateFromEnv, parseWebhookUrl, safeRequest } from "./netguard";
 import { checkAndHit, parseLimits, rulesFor } from "./ratelimit";
 import { getPublished, getSiteBySlug, log, normalizePath } from "./repo";
@@ -347,8 +348,17 @@ const sendEmail: Handler = async ({ lead, integration, delivery }) => {
     throw new DeliveryError("O serviço de e-mail recusou o envio.");
 };
 
+const sendNotion: Handler = async ({ lead, integration }) => {
+  await createLeadPage({
+    config: readNotionConfig(integration.config),
+    lead: lead as LeadRow,
+    key: secretKey(),
+  });
+};
+
 export const handlers: Record<string, Handler> = {
   webhook: sendWebhook,
+  notion: sendNotion,
   email: sendEmail,
 };
 

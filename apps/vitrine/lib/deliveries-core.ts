@@ -1,5 +1,5 @@
 // Delivery queue. A new lead is saved first; sending it to e-mail, a webhook
-// (and later Notion or Google) happens afterwards, one delivery per
+// (Notion, and later Google) happens afterwards, one delivery per
 // destination, with retries and a growing wait. A destination that is down
 // never loses a lead and never breaks the form. Takes the connection and the
 // handlers as arguments: no server runtime, fully testable with a fake clock.
@@ -66,13 +66,28 @@ export function enqueue(
   now = Date.now(),
   skipKinds: string[] = []
 ): number {
+  const form = (
+    conn.prepare("SELECT form FROM leads WHERE id = ?").get(leadId) as
+      | { form: string }
+      | undefined
+  )?.form;
   const targets = (
     conn
       .prepare(
-        "SELECT id, kind FROM integrations WHERE site_id = ? AND enabled = 1"
+        "SELECT id, kind, config FROM integrations WHERE site_id = ? AND enabled = 1"
       )
-      .all(siteId) as { id: string; kind: string }[]
-  ).filter((t) => !skipKinds.includes(t.kind));
+      .all(siteId) as { id: string; kind: string; config: string }[]
+  )
+    .filter((t) => !skipKinds.includes(t.kind))
+    // A destination may serve only one form (config.form). Absent or null = all.
+    .filter((t) => {
+      try {
+        const scope = JSON.parse(t.config)?.form;
+        return scope === undefined || scope === null || scope === form;
+      } catch {
+        return true;
+      }
+    });
   const ins = conn.prepare(
     `INSERT INTO deliveries (id, site_id, lead_id, integration_id, status, next_at)
      VALUES (?, ?, ?, ?, 'pending', ?)`
