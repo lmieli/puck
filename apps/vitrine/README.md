@@ -19,6 +19,7 @@ Construída sobre o editor [Puck](../../packages/core) deste repositório. A IA 
 | **Domínios**        | Domínio próprio do cliente com verificação por registro TXT e checagem de CNAME. Endereço provisório `<site>.<domínio raiz>`.                                                                              |
 | **Contatos**        | O bloco "Formulário de contato" grava as mensagens no painel do cliente (aba Contatos), com limite de envio por IP.                                                                                        |
 | **Rastreamento**    | Meta Pixel, Google Analytics 4, Google Ads, TikTok e Pinterest só com o ID, aviso de cookies (LGPD), conversão ao enviar o formulário, origem da campanha em cada contato e contagem de visitas no painel. |
+| **WhatsApp**        | Balão verde fixo no canto de todas as páginas, com número, mensagem de abertura, texto ao lado do ícone e posição. Os cliques viram evento nas ferramentas de rastreamento.                                |
 | **Atividade**       | Registro de publicações, restaurações, pedidos de revisão, uso da IA, domínios e acessos.                                                                                                                  |
 
 ## Blocos
@@ -129,6 +130,15 @@ Aba **Rastreamento** do site (administradores) e aba **Visitas** (todos). Equiva
 - **Código próprio (só equipe da agência).** Para Google Tag Manager, chat e o que não tem campo, a conta de agência pode colar HTML no `<head>` do site. Carrega depois do aceite de cookies. **Cole só código de fonte confiável:** ele roda com o mesmo poder do site, e no endereço provisório o site divide o domínio com o painel. A trava é no servidor: cliente, mesmo administrador do site, não consegue salvar esse campo.
 
 Não faz (ainda): envio de conversões pelo servidor (Meta Conversions API) e eventos personalizados por regra, como "rolou 75% da página".
+
+## Balão de WhatsApp
+
+Aba **WhatsApp** do site (administradores). O cliente digita o número com DDD, como `(11) 91234-5678`, e escolhe a mensagem que a conversa já abre, o texto ao lado do ícone e o canto da tela. Número em branco desliga o balão.
+
+- **É só um link `wa.me`.** Sem script e sem incorporar nada, então funciona mesmo antes da escolha de cookies. Abre em nova aba, sem repassar a página de origem (`noopener`).
+- **Número.** Aceita qualquer formato. Sem `+`, 10 ou 11 dígitos viram Brasil (`55` na frente). Fora do Brasil, comece com `+` e o código do país. O que não parece telefone é recusado, e a mensagem é codificada na URL.
+- **Celular.** Só o ícone (alvo de toque de 58 px). Se o aviso de cookies estiver aberto, o balão sobe para não ficar embaixo dele, e o botão "Cookies" vai para o lado oposto ao do balão.
+- **Rastreamento.** O clique vira `Contact` no Meta e no TikTok, `whatsapp_click` no Google e um evento personalizado no Pinterest, quando essas ferramentas estão configuradas e aceitas. Não conta como Lead do formulário.
 
 ## Rodar
 

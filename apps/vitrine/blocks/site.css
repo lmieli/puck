@@ -2745,3 +2745,113 @@ html.v-motion .v-site [data-reveal]:not(.is-in) {
     flex: 1;
   }
 }
+
+/* ---------- WhatsApp bubble (outside .v-site: fixed colours, any theme) ---------- */
+.v-wa {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 2147482000;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  min-width: 58px;
+  justify-content: center;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #25d366;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  font: 600 15px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, bottom 0.25s ease;
+}
+
+.v-wa-right {
+  right: 20px;
+}
+
+.v-wa-left {
+  left: 20px;
+}
+
+/* Fixed colours: a host page's link styles (the dashboard's, for one) must not win. */
+html a.v-wa,
+html a.v-wa:visited,
+html a.v-wa:hover,
+html a.v-wa .v-wa-label {
+  color: #fff;
+  text-decoration: none;
+}
+
+.v-wa:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.v-wa:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px #128c4a;
+}
+
+.v-wa svg {
+  flex-shrink: 0;
+}
+
+.v-wa.is-preview {
+  position: static;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.v-wa:not(.is-preview)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid #25d366;
+  opacity: 0;
+  animation: v-wa-pulse 2.8s ease-out 1.5s 3;
+  pointer-events: none;
+}
+
+@keyframes v-wa-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v-wa,
+  .v-wa::after {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* phones: icon only, and out of the way of the cookie notice */
+@media (max-width: 640px) {
+  .v-wa-label {
+    display: none;
+  }
+  .v-wa {
+    padding: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  body.v-consent-open .v-wa {
+    bottom: calc(150px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* the "Cookies" button goes to the side the bubble is not on */
+.v-consent-link.is-right {
+  left: auto;
+  right: 12px;
+}

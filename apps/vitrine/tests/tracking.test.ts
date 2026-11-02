@@ -337,3 +337,20 @@ test("the visit summary fills empty days and ranks pages and sources", () => {
   ]);
   assert.deepEqual(s.sources[0], { name: "google / cpc", views: 6 });
 });
+
+test("a click on the WhatsApp bubble becomes a Contact event on each platform", () => {
+  const t = tracking({
+    metaPixel: "123456789012345",
+    ga4: "G-ABC123XYZ9",
+    googleAds: "AW-123456789",
+    googleAdsLeadLabel: "AbC-dEfGhIjK",
+    tiktok: "C1A2B3C4D5E6F7G8H9I0",
+    pinterest: "2612345678901",
+  });
+  assert.deepEqual(eventCalls(t, "whatsapp"), [
+    ["fbq", ["track", "Contact"]],
+    ["gtag", ["event", "whatsapp_click"]],
+    ["ttq.track", ["Contact"]],
+    ["pintrk", ["track", "custom", { label: "whatsapp" }]],
+  ]);
+});

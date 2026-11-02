@@ -223,9 +223,13 @@ export function vendorScripts(t: Tracking): Vendor[] {
 /* Events                                                                */
 /* ------------------------------------------------------------------ */
 
-export type TrackEvent = "lead" | "cta";
+export type TrackEvent = "lead" | "cta" | "whatsapp";
 
-/** The calls each platform gets for an event: [global function, arguments]. */
+/**
+ * The calls each platform gets for an event: [global function, arguments].
+ * "lead" is a contact form sent, "whatsapp" a click on the WhatsApp bubble
+ * (Meta's standard Contact event), "cta" a click on a main button.
+ */
 export function eventCalls(
   t: Tracking,
   event: TrackEvent,
@@ -238,6 +242,8 @@ export function eventCalls(
       "fbq",
       event === "lead"
         ? ["track", "Lead"]
+        : event === "whatsapp"
+        ? ["track", "Contact"]
         : ["trackCustom", "CTAClick", { label: l }],
     ]);
   if (t.ga4 || t.googleAds) {
@@ -245,6 +251,8 @@ export function eventCalls(
       "gtag",
       event === "lead"
         ? ["event", "generate_lead"]
+        : event === "whatsapp"
+        ? ["event", "whatsapp_click"]
         : ["event", "cta_click", { label: l }],
     ]);
     if (event === "lead" && t.googleAds && t.googleAdsLeadLabel)
@@ -260,12 +268,20 @@ export function eventCalls(
   if (t.tiktok)
     calls.push([
       "ttq.track",
-      [event === "lead" ? "SubmitForm" : "ClickButton"],
+      [
+        event === "lead"
+          ? "SubmitForm"
+          : event === "whatsapp"
+          ? "Contact"
+          : "ClickButton",
+      ],
     ]);
   if (t.pinterest)
     calls.push([
       "pintrk",
-      event === "lead" ? ["track", "lead"] : ["track", "custom", { label: l }],
+      event === "lead"
+        ? ["track", "lead"]
+        : ["track", "custom", { label: event === "whatsapp" ? "whatsapp" : l }],
     ]);
   return calls;
 }

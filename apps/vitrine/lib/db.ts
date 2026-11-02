@@ -155,6 +155,10 @@ function migrate(conn: Database.Database) {
     conn.exec(
       "ALTER TABLE sites ADD COLUMN tracking TEXT NOT NULL DEFAULT '{}'"
     );
+  if (!cols.includes("whatsapp"))
+    conn.exec(
+      "ALTER TABLE sites ADD COLUMN whatsapp TEXT NOT NULL DEFAULT '{}'"
+    );
   if (!cols.includes("head_script"))
     conn.exec(
       "ALTER TABLE sites ADD COLUMN head_script TEXT NOT NULL DEFAULT ''"

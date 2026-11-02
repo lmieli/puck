@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { Data } from "@puckeditor/core";
 import { fillDefaults } from "@/blocks/schema";
-import { getTracking } from "@/lib/analytics";
+import { getTracking, getWhatsApp } from "@/lib/analytics";
 import { getPublished, normalizePath, type Site } from "@/lib/repo";
 import { SiteRender } from "./SiteRender";
 import { Tracking } from "./Tracking";
+import { WhatsAppBubble } from "./WhatsAppBubble";
 
 export function publicMetadata(
   site: Site | null,
@@ -46,6 +47,7 @@ export function PublicPage({
   const path = normalizePath((parts ?? []).join("/"));
   const data = getPublished(site.id, path);
   if (!data) notFound();
+  const whatsapp = getWhatsApp(site);
   return (
     <>
       <SiteRender
@@ -58,7 +60,9 @@ export function PublicPage({
         path={path}
         tracking={getTracking(site)}
         headScript={site.head_script}
+        bubbleSide={whatsapp.number ? whatsapp.position : null}
       />
+      <WhatsAppBubble whatsapp={whatsapp} />
     </>
   );
 }

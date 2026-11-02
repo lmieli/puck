@@ -19,8 +19,9 @@ import {
 } from "@/components/dash/forms";
 import { Ledger } from "@/components/dash/Ledger";
 import { TrackingPanel } from "@/components/dash/TrackingPanel";
+import { WhatsAppPanel } from "@/components/dash/WhatsAppPanel";
 import { Visits } from "@/components/dash/Visits";
-import { getTracking, viewSummary } from "@/lib/analytics";
+import { getTracking, getWhatsApp, viewSummary } from "@/lib/analytics";
 import { sanitizeOrigin, sourceLabel } from "@/lib/tracking";
 import { listLedger, modelForSite, usageSummary } from "@/lib/credits";
 import { timeAgo } from "@/lib/time";
@@ -51,6 +52,7 @@ const tabs = [
   ["contatos", "Contatos"],
   ["visitas", "Visitas"],
   ["rastreamento", "Rastreamento"],
+  ["whatsapp", "WhatsApp"],
   ["creditos", "IA e créditos"],
   ["atividade", "Atividade"],
 ] as const;
@@ -497,6 +499,10 @@ export default async function SitePage({ params, searchParams }: Params) {
           headScript={site.head_script}
           isPlatformAdmin={!!user.is_super_admin}
         />
+      )}
+
+      {tab === "whatsapp" && isAdmin && (
+        <WhatsAppPanel slug={site.slug} whatsapp={getWhatsApp(site)} />
       )}
 
       {tab === "creditos" && isAdmin && (

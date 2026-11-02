@@ -26,6 +26,8 @@ export type Site = {
   credits: number;
   /** JSON of tracking IDs and flags; read it with getTracking(). */
   tracking: string;
+  /** JSON of the WhatsApp bubble; read it with getWhatsApp(). */
+  whatsapp: string;
   /** Free <head> code, settable only by platform admins. */
   head_script: string;
   created_at: string;

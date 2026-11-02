@@ -16,6 +16,8 @@ type Props = {
   tracking: Config;
   /** Free <head> code set by the agency. */
   headScript: string;
+  /** Side of the WhatsApp bubble, so the "Cookies" button takes the other. */
+  bubbleSide?: "left" | "right" | null;
 };
 
 type Choice = "granted" | "denied" | null;
@@ -73,7 +75,13 @@ function fire(config: Config, event: TrackEvent, label = "") {
   }
 }
 
-export function Tracking({ slug, path, tracking, headScript }: Props) {
+export function Tracking({
+  slug,
+  path,
+  tracking,
+  headScript,
+  bubbleSide = null,
+}: Props) {
   const [ready, setReady] = useState(false);
   const [choice, setChoice] = useState<Choice>(null);
   const [asking, setAsking] = useState(false);
@@ -128,10 +136,11 @@ export function Tracking({ slug, path, tracking, headScript }: Props) {
     const onLead = () => fire(tracking, "lead");
     const onClick = (e: MouseEvent) => {
       const el = (e.target as Element | null)?.closest?.(
-        "a.v-btn, button.v-btn"
+        "a.v-wa, a.v-btn, button.v-btn"
       );
       if (!el || el.matches('button[type="submit"]')) return;
-      fire(tracking, "cta", el.textContent?.trim() ?? "");
+      if (el.matches(".v-wa")) fire(tracking, "whatsapp");
+      else fire(tracking, "cta", el.textContent?.trim() ?? "");
     };
     window.addEventListener("vitrine:lead", onLead);
     document.addEventListener("click", onClick, true);
@@ -153,12 +162,18 @@ export function Tracking({ slug, path, tracking, headScript }: Props) {
     if (next === "denied" && loaded.current) window.location.reload();
   };
 
+  const bannerOpen = ready && needsConsent && (choice === null || asking);
+  useEffect(() => {
+    document.body.classList.toggle("v-consent-open", bannerOpen);
+    return () => document.body.classList.remove("v-consent-open");
+  }, [bannerOpen]);
+
   if (!ready || !needsConsent) return null;
   if (choice !== null && !asking)
     return (
       <button
         type="button"
-        className="v-consent-link"
+        className={`v-consent-link${bubbleSide === "left" ? " is-right" : ""}`}
         onClick={() => setAsking(true)}
       >
         Cookies

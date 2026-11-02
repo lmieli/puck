@@ -11,11 +11,38 @@ import {
   type Tracking,
   type ViewRow,
 } from "./tracking";
+import { parseWhatsApp, validateWhatsApp, type WhatsApp } from "./whatsapp";
 
 export const MAX_HEAD_SCRIPT = 20_000;
 
 export function getTracking(site: Pick<Site, "tracking">): Tracking {
   return parseTracking(site.tracking);
+}
+
+export function getWhatsApp(site: Pick<Site, "whatsapp">): WhatsApp {
+  return parseWhatsApp(site.whatsapp);
+}
+
+/** WhatsApp bubble: site administrators. */
+export function saveWhatsApp(
+  user: User,
+  slug: string,
+  input: Record<string, unknown>
+) {
+  const { site } = siteFor(user, slug, "admin");
+  const r = validateWhatsApp(input);
+  if ("error" in r) throw new HttpError(400, r.error);
+  db()
+    .prepare("UPDATE sites SET whatsapp = ? WHERE id = ?")
+    .run(JSON.stringify(r.value), site.id);
+  log(
+    site.id,
+    user.id,
+    "whatsapp",
+    r.value.number
+      ? "Balão de WhatsApp alterado."
+      : "Balão de WhatsApp desligado."
+  );
 }
 
 /** Tracking IDs and flags: site administrators. */

@@ -9,7 +9,7 @@ import {
   requireUser,
   verifyPassword,
 } from "@/lib/auth";
-import { saveHeadScript, saveTracking } from "@/lib/analytics";
+import { saveHeadScript, saveTracking, saveWhatsApp } from "@/lib/analytics";
 import { db } from "@/lib/db";
 import { attachDomain, detachDomain } from "@/lib/hosting";
 import {
@@ -332,6 +332,20 @@ export async function saveHeadScriptAction(
   const res = await guard(() => {
     saveHeadScript(user, slug, String(form.get("headScript") || ""));
     return { ok: "Código salvo. Vale para as próximas visitas." };
+  });
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+export async function saveWhatsAppAction(
+  slug: string,
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(() => {
+    saveWhatsApp(user, slug, Object.fromEntries(form));
+    return { ok: "WhatsApp salvo. O balão aparece nas próximas visitas." };
   });
   revalidatePath(`/app/s/${slug}`);
   return res;
