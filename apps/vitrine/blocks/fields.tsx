@@ -151,6 +151,68 @@ function ColorField({
   );
 }
 
+function SizeField({
+  value,
+  onChange,
+  def,
+  readOnly,
+}: {
+  value: number | "" | undefined;
+  onChange: (v: number | "") => void;
+  def: Extract<FieldDef, { type: "size" }>;
+  readOnly?: boolean;
+}) {
+  const isAuto = value === "" || value === undefined || value === null;
+  const num = isAuto ? def.min : Number(value);
+  const set = (raw: string) => {
+    if (raw === "") return onChange("");
+    const n = Number(raw);
+    if (Number.isFinite(n)) onChange(Math.min(def.max, Math.max(def.min, n)));
+  };
+  return (
+    <div className="vx-field">
+      <span className="vx-field-label">{def.label}</span>
+      <div className="vx-size">
+        <input
+          type="range"
+          min={def.min}
+          max={def.max}
+          step={def.step ?? 1}
+          value={num}
+          disabled={readOnly}
+          aria-label={def.label}
+          className={isAuto ? "is-auto" : undefined}
+          onChange={(e) => set(e.target.value)}
+        />
+        <div className="vx-size-input">
+          <input
+            type="number"
+            min={def.min}
+            max={def.max}
+            step={def.step ?? 1}
+            value={isAuto ? "" : num}
+            placeholder={def.auto ?? "auto"}
+            disabled={readOnly}
+            aria-label={`${def.label} (valor exato)`}
+            onChange={(e) => set(e.target.value)}
+          />
+          <span>{def.unit}</span>
+        </div>
+        {!isAuto && def.auto !== undefined && (
+          <button
+            type="button"
+            className="vx-clear"
+            disabled={readOnly}
+            onClick={() => onChange("")}
+          >
+            Automático
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** Convert a schema field into a Puck field. */
 export function toPuckField(def: FieldDef): Field {
   switch (def.type) {
@@ -170,6 +232,19 @@ export function toPuckField(def: FieldDef): Field {
           { label: "Sim", value: true },
           { label: "Não", value: false },
         ],
+      };
+    case "size":
+      return {
+        type: "custom",
+        label: def.label,
+        render: ({ value, onChange, readOnly }) => (
+          <SizeField
+            value={value}
+            onChange={onChange}
+            def={def}
+            readOnly={readOnly}
+          />
+        ),
       };
     case "color":
       return {

@@ -2154,6 +2154,15 @@ html.v-motion .v-site [data-reveal]:not(.is-in) {
   gap: 14px;
 }
 
+.v-site .v-figure {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.v-figure-box {
+  position: relative;
+}
+
 .v-figure-media {
   overflow: hidden;
   background: var(--card-alt);
@@ -2167,8 +2176,11 @@ html.v-motion .v-site [data-reveal]:not(.is-in) {
 .v-figure-media > .v-placeholder {
   width: 100%;
   height: 100%;
-  min-height: 220px;
   object-fit: cover;
+}
+
+.v-figure-media > .v-placeholder {
+  min-height: 220px;
 }
 
 .v-figure figcaption {
@@ -2491,4 +2503,172 @@ html.v-motion .v-site [data-reveal]:not(.is-in) {
 .v-site[data-motion="off"] .v-parallax-copy {
   opacity: 1;
   transform: none;
+}
+
+/* ==========================================================================
+   Resize handles (editor only; see blocks/resize.tsx)
+   ========================================================================== */
+
+.v-block[data-editing] {
+  position: relative;
+}
+
+.vh-layer,
+.vh-hero-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.vh-hero-layer {
+  --m: max(0, 1 - var(--p, 0) * 1.8);
+  z-index: 5;
+}
+
+.vh-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(61, 90, 254, 0.18) 0 6px,
+    transparent 6px 12px
+  );
+}
+
+.vh-band-top {
+  top: 0;
+}
+
+.vh-band-bottom {
+  bottom: 0;
+}
+
+.vh-handle {
+  position: absolute;
+  z-index: 41;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.vh-top,
+.vh-bottom {
+  left: 50%;
+  width: 104px;
+  height: 30px;
+  cursor: ns-resize;
+  transform: translate(-50%, -50%) scale(var(--vh-s, 1));
+}
+
+.vh-bottom {
+  bottom: 0;
+  transform: translate(-50%, 50%) scale(var(--vh-s, 1));
+}
+
+.vh-left,
+.vh-right {
+  top: 50%;
+  width: 30px;
+  height: 104px;
+  cursor: ew-resize;
+  transform: translate(-50%, -50%) scale(var(--vh-s, 1));
+}
+
+.vh-grip {
+  display: block;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid #3d5afe;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  transition: background 0.15s, transform 0.15s;
+}
+
+.vh-top .vh-grip,
+.vh-bottom .vh-grip {
+  width: 52px;
+  height: 10px;
+}
+
+.vh-left .vh-grip,
+.vh-right .vh-grip {
+  width: 10px;
+  height: 52px;
+}
+
+.vh-handle:hover .vh-grip,
+.vh-handle.is-dragging .vh-grip {
+  background: #3d5afe;
+  transform: scale(1.12);
+}
+
+.vh-tip {
+  position: absolute;
+  white-space: nowrap;
+  pointer-events: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #0c0c10;
+  color: #fff;
+  font: 600 12px/1 "Inter", system-ui, sans-serif;
+  letter-spacing: 0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.vh-top .vh-tip,
+.vh-bottom .vh-tip {
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.vh-right .vh-tip {
+  left: calc(100% + 4px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.vh-left .vh-tip {
+  right: calc(100% + 4px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* image block: handles sit on the picture's own edges */
+.vh-layer-fill .vh-left {
+  left: 0;
+}
+
+.vh-layer-fill .vh-right {
+  left: auto;
+  right: 0;
+  transform: translate(50%, -50%) scale(var(--vh-s, 1));
+}
+
+/* cinematic hero: handles follow the photo card as it grows */
+.vh-hero-layer .vh-left,
+.vh-hero-layer .vh-right {
+  top: calc(
+    (var(--m) * var(--copy-share, 50%) + 100% - var(--m) * var(--inset-b, 3.5%)) /
+      2
+  );
+}
+
+.vh-hero-layer .vh-left {
+  left: calc(var(--m) * var(--inset, 5%));
+}
+
+.vh-hero-layer .vh-right {
+  left: auto;
+  right: calc(var(--m) * var(--inset, 5%));
+  transform: translate(50%, -50%) scale(var(--vh-s, 1));
+}
+
+.vh-hero-layer .vh-bottom {
+  bottom: calc(var(--m) * var(--inset-b, 3.5%));
 }

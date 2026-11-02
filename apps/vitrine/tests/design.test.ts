@@ -273,3 +273,73 @@ test("the AI sees the shared props, the page settings and every new block", () =
   assert.match(SYSTEM_PROMPT, /spaceTop/);
   assert.match(SYSTEM_PROMPT, /mediaSize/);
 });
+
+test("exact sizes: numbers within range or empty, anything else is refused", () => {
+  const p = applyOperation(emptyPage(), "insert_block", {
+    type: "Hero",
+    props: {},
+  }).page;
+  const id = p.content[0].props.id;
+  const ok = applyOperation(p, "update_block", {
+    id,
+    props: {
+      mediaInset: 2.5,
+      mediaInsetBottom: 0,
+      widthPx: 960,
+      spaceTopPx: 0,
+      spaceBottomPx: 240,
+    },
+  }).page;
+  assert.equal(ok.content[0].props.mediaInset, 2.5);
+  assert.equal(
+    ok.content[0].props.spaceTopPx,
+    0,
+    "0 is a real value, not auto"
+  );
+  const cleared = applyOperation(ok, "update_block", {
+    id,
+    props: { mediaInset: "" },
+  }).page;
+  assert.equal(cleared.content[0].props.mediaInset, "");
+  for (const bad of [
+    { mediaInset: 40 },
+    { mediaInset: -1 },
+    { widthPx: 100 },
+    { spaceTopPx: 9999 },
+    { mediaInset: "big" },
+  ]) {
+    assert.throws(
+      () => applyOperation(p, "update_block", { id, props: bad }),
+      OpError,
+      JSON.stringify(bad)
+    );
+  }
+  const img = applyOperation(emptyPage(), "insert_block", {
+    type: "Image",
+    props: { widthPct: 60, heightPx: 480 },
+  }).page;
+  assert.equal(img.content[0].props.widthPct, 60);
+  assert.throws(
+    () =>
+      applyOperation(img, "update_block", {
+        id: img.content[0].props.id,
+        props: { widthPct: 5 },
+      }),
+    OpError
+  );
+});
+
+test("new sizing fields are defaulted on old pages and described to the AI", () => {
+  const filled = fillDefaults({
+    root: { props: {} },
+    content: [{ type: "Image", props: { id: "Image-1", image: "x" } }],
+  });
+  assert.equal(filled.content[0].props.widthPct, 100);
+  assert.equal(filled.content[0].props.heightPx, "");
+  assert.equal(filled.content[0].props.spaceTopPx, "");
+  assert.match(SYSTEM_PROMPT, /mediaInset/);
+  assert.match(SYSTEM_PROMPT, /spaceTopPx/);
+  assert.match(SYSTEM_PROMPT, /widthPct/);
+  const cat = JSON.stringify(blockCatalog());
+  assert.ok(cat.includes("número de 0 a 30"));
+});

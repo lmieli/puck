@@ -36,6 +36,8 @@ function zodFor(field: FieldDef): z.ZodTypeAny {
       return z.string().max(4000);
     case "number":
       return z.number();
+    case "size":
+      return z.union([z.literal(""), z.number().min(field.min).max(field.max)]);
     case "boolean":
       return z.boolean();
     case "color":

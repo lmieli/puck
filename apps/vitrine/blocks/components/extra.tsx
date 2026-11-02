@@ -1,7 +1,9 @@
 "use client";
 
 import { embedUrl } from "../design";
+import { useRef } from "react";
 import { useReveal } from "../motion";
+import { ImageHandles, useResize } from "../resize";
 import {
   anchor,
   Buttons,
@@ -52,8 +54,18 @@ export function Text(p: PropsOf<"Text">) {
 
 export function Image(p: PropsOf<"Image">) {
   const ref = useReveal<HTMLDivElement>();
+  const box = useRef<HTMLDivElement>(null);
+  const resize = useResize();
+  const widthPct = typeof p.widthPct === "number" ? p.widthPct : 100;
+  const heightPx = typeof p.heightPx === "number" ? p.heightPx : null;
   const media = (
-    <div className="v-figure-media" style={{ aspectRatio: cssRatio(p.ratio) }}>
+    <div
+      className="v-figure-media"
+      style={{
+        aspectRatio: heightPx ? undefined : cssRatio(p.ratio),
+        height: heightPx ?? undefined,
+      }}
+    >
       <Media
         src={p.image}
         alt={p.alt}
@@ -69,9 +81,13 @@ export function Image(p: PropsOf<"Image">) {
       <div ref={ref} className="v-wrap">
         <figure
           className={`v-figure${p.rounded ? " is-rounded" : ""}`}
+          style={{ width: `${widthPct}%` }}
           data-reveal
         >
-          {p.href ? <a href={p.href}>{media}</a> : media}
+          <div className="v-figure-box" ref={box}>
+            {p.href ? <a href={p.href}>{media}</a> : media}
+            {resize && <ImageHandles box={box} />}
+          </div>
           {p.caption && <figcaption>{p.caption}</figcaption>}
         </figure>
       </div>

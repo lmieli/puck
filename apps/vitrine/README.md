@@ -50,6 +50,12 @@ Tudo é ajustável em três níveis, sem código e sem deploy. A IA enxerga os m
 
 **3. Cada bloco** (grupo "Estilo e espaçamento" de todo bloco): espaço acima e abaixo, largura, alinhamento do texto, cor de fundo e de texto, imagem de fundo com escurecimento (o texto vira claro sozinho), animação de entrada (aparecer, subir, zoom, deslizar ou nenhuma), esconder no celular ou no computador e âncora para links. Além disso, cada bloco tem as próprias opções: a Abertura, por exemplo, escolhe o tamanho da foto ao abrir (pequena, média, grande, tela toda), o tamanho do título e o enquadramento da foto.
 
+**Tamanho livre, de três jeitos equivalentes.** Qualquer tamanho aceita valor exato, não só presets, e os três caminhos escrevem os mesmos campos:
+
+- **Mouse:** selecione um bloco e arraste as alças nas bordas. Topo e base mudam o espaço (`spaceTopPx`, `spaceBottomPx`); laterais mudam a largura do conteúdo (`widthPx`). Na Imagem, as laterais mudam `widthPct` e a base muda `heightPx`; na Abertura cinematográfica, as laterais e a base da foto mudam `mediaInset` e `mediaInsetBottom`. A medida aparece enquanto arrasta, `Esc` cancela e cada arrasto vira um único passo de desfazer.
+- **Barra lateral:** os mesmos campos têm controle deslizante e caixa numérica para o valor exato, com "Automático" para voltar ao padrão.
+- **IA:** peça "deixe a foto com 70% da largura" ou "aumente o espaço abaixo para 160 px"; a IA grava os mesmos números.
+
 Blocos livres para montar qualquer tipo de site: **Texto**, **Imagem**, **Cartões**, **Planos e preços**, **Logos de clientes**, **Vídeo ou mapa** (YouTube, Vimeo, Loom, Google Maps, OpenStreetMap, Calendly, sempre isolados) e **Divisor**, além dos blocos cinematográficos.
 
 Por segurança, não existe bloco de HTML ou script livre: os sites rodam no mesmo domínio do painel, e um script de um cliente poderia atacar os outros. O CSS próprio é limpo antes de ir ao ar.

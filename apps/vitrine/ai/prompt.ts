@@ -19,6 +19,10 @@ function describeField(f: FieldDef): unknown {
       for (const [k, v] of Object.entries(f.item)) item[k] = describeField(v);
       return { type: "list", ...(f.max ? { max: f.max } : {}), item };
     }
+    case "size":
+      return `número de ${f.min} a ${f.max} (${f.unit}) ou "" para automático${
+        f.help ? ` — ${f.help}` : ""
+      }`;
     case "color":
       return f.optional ? "color #rrggbb ou vazio" : "color #rrggbb";
     case "image":
@@ -70,7 +74,11 @@ Os sites da Vitrine seguem a linguagem de grandes lançamentos de produto: minim
 Toda mudança visual pedida deve virar props. Procure primeiro nos campos do bloco, depois nos campos comuns, depois nas configurações da página.
 - **Configurações da página** (update_page): theme (light, dark ou auto), accent, bgColor e textColor (cores de fundo e de texto da página; vazio = padrão do tema), font (combinação) ou headingFont e bodyFont (famílias específicas), headingWeight, titleScale (tamanho dos títulos), radius (cantos), buttonShape, contentWidth, density (espaço entre seções), animations (false deixa a página estática) e customCss (CSS puro, último recurso).
 - **Props comuns a todos os blocos** (update_block, em commonBlockProps do catálogo): spaceTop e spaceBottom, width, textAlign, bgColor, textColor, bgImage com bgOverlay, animation, hideOn e anchor. Exemplos: "mais respiro antes desta seção" é spaceTop "lg"; "fundo preto aqui" é bgColor "#000000" com textColor "#ffffff"; "não mostre no celular" é hideOn "mobile".
-- **Foto da abertura pequena ou grande**: Hero.mediaSize (small, medium, large, full); título grande demais: Hero.titleSize ou update_page titleScale.
+- **Tamanhos exatos**: o usuário também pode arrastar com o mouse e digitar valores, e você usa os mesmos campos numéricos. Número vazio ("") significa automático. Pedidos relativos ("um pouco maior", "o dobro do espaço") partem do valor atual: se estiver vazio, use a referência abaixo e some ou subtraia cerca de 20% a 30% para "um pouco".
+  - Foto da Abertura cinematográfica: Hero.mediaInset é a margem de cada lado em % da largura (0 a 30; menor = foto maior; 0 encosta nas bordas) e Hero.mediaInsetBottom a margem inferior em % da altura (0 a 25). Equivalentes dos tamanhos prontos de Hero.mediaSize: small 17, medium 10, large 5, full 0. "Aumente a foto" = diminuir mediaInset (e mediaInsetBottom). Mesmo assim, para "tela cheia" basta mediaSize "full".
+  - Bloco Imagem: widthPct (10 a 100, % da largura do conteúdo) e heightPx (120 a 1600; "" usa a proporção ratio).
+  - Qualquer bloco: widthPx (largura máxima do conteúdo, 320 a 2000, "" = automática; padrão da página 1180), spaceTopPx e spaceBottomPx (espaço exato em pixels, 0 a 640; o padrão automático fica entre 80 e 144).
+  - Título grande demais: Hero.titleSize ou update_page titleScale.
 - "Deixe mais sofisticado/moderno/aconchegante" pede combinação de mudanças de página: tema, accent, fontes, radius e density, e não só um campo.
 - Dê o menor passo que cumpre o pedido e diga na resposta final o que mudou e como desfazer ("é só pedir para voltar").
 - customCss só quando nenhum campo resolve; escreva CSS curto, sem @import, usando as classes .v-site, .v-section, .v-h2, .v-btn.

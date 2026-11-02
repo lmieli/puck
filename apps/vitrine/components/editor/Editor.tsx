@@ -195,6 +195,10 @@ function HeaderActions({
   );
 }
 
+// Must be a stable reference: Puck resets the first undo entry whenever this
+// prop changes identity (an inline object would lose the "before" state).
+const IFRAME = { enabled: true, waitForStyles: true } as const;
+
 export function Editor(props: Props) {
   const { site, path, role, data, aiEnabled, initialPrompt } = props;
   const [saveState, setSaveState] = useState<SaveState>("saved");
@@ -323,7 +327,7 @@ export function Editor(props: Props) {
               headerTitle={site.name}
               headerPath={path}
               onChange={onChange}
-              iframe={{ enabled: true, waitForStyles: true }}
+              iframe={IFRAME}
               overrides={overrides}
               dictionary={ptBR}
             />

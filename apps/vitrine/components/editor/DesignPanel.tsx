@@ -25,6 +25,7 @@ export function DesignPanel({
   const apply = (props: Record<string, unknown>, name: string) => {
     dispatch({
       type: "setData",
+      recordHistory: true,
       data: (prev: { root?: { props?: Record<string, unknown> } }) => ({
         root: {
           ...(prev.root ?? {}),

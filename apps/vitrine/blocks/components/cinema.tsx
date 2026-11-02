@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { useActiveStep, useReveal, useScrollProgress } from "../motion";
+import { HeroHandles, useResize } from "../resize";
 import {
   anchor,
   Buttons,
@@ -52,6 +53,16 @@ const headScales = { sm: 0.78, md: 1, lg: 1.22, xl: 1.5 } as const;
 
 export function Hero(p: PropsOf<"Hero">) {
   const headScale = headScales[p.titleSize as keyof typeof headScales] ?? 1;
+  const resize = useResize();
+  const inset = typeof p.mediaInset === "number" ? p.mediaInset : null;
+  const insetBottom =
+    typeof p.mediaInsetBottom === "number" ? p.mediaInsetBottom : null;
+  const cardVars: Record<string, string> = {};
+  if (inset !== null) {
+    cardVars["--inset"] = `${inset}%`;
+    cardVars["--fr"] = inset > 0 ? "32px" : "0px";
+  }
+  if (insetBottom !== null) cardVars["--inset-b"] = `${insetBottom}%`;
   const sticky = useScrollProgress<HTMLElement>("sticky");
   const reveal = useReveal<HTMLElement>();
 
@@ -85,7 +96,7 @@ export function Hero(p: PropsOf<"Hero">) {
         ref={sticky}
         className={`v-hero v-hero-cinematic v-tone-${p.tone}`}
         data-size={p.mediaSize}
-        style={{ ["--ht" as string]: headScale }}
+        style={{ ["--ht" as string]: headScale, ...cardVars } as CSSProperties}
       >
         <div className="v-hero-sticky">
           <div className="v-hero-copy">
@@ -104,6 +115,7 @@ export function Hero(p: PropsOf<"Hero">) {
               position={p.imagePosition}
             />
           </div>
+          {resize && <HeroHandles section={sticky} />}
         </div>
       </section>
     );

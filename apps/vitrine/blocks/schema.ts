@@ -17,6 +17,17 @@ export type FieldDef =
     }
   | { type: "boolean"; label: string; help?: string }
   | { type: "color"; label: string; help?: string; optional?: boolean }
+  | {
+      type: "size";
+      label: string;
+      help?: string;
+      min: number;
+      max: number;
+      step?: number;
+      unit: "px" | "%";
+      /** Value shown/used when the field is left empty ("auto"). */
+      auto?: string;
+    }
   | { type: "image"; label: string; help?: string }
   | {
       type: "list";
@@ -121,6 +132,36 @@ export const commonFields = {
       ["full", "Tela toda"]
     ),
   },
+  widthPx: {
+    type: "size",
+    label: "Largura máxima do conteúdo",
+    help: "em pixels; vazio segue a opção acima. Dá para arrastar as alças laterais do bloco",
+    min: 320,
+    max: 2000,
+    step: 10,
+    unit: "px",
+    auto: "automática",
+  },
+  spaceTopPx: {
+    type: "size",
+    label: "Espaço acima (px)",
+    help: "valor exato; vazio segue a opção Espaço acima. Dá para arrastar a alça do topo do bloco",
+    min: 0,
+    max: 640,
+    step: 4,
+    unit: "px",
+    auto: "padrão",
+  },
+  spaceBottomPx: {
+    type: "size",
+    label: "Espaço abaixo (px)",
+    help: "valor exato; vazio segue a opção Espaço abaixo. Dá para arrastar a alça da base do bloco",
+    min: 0,
+    max: 640,
+    step: 4,
+    unit: "px",
+    auto: "padrão",
+  },
   textAlign: {
     type: "select",
     label: "Alinhamento do texto",
@@ -182,6 +223,9 @@ export const commonDefaults = {
   spaceTop: "auto",
   spaceBottom: "auto",
   width: "auto",
+  widthPx: "",
+  spaceTopPx: "",
+  spaceBottomPx: "",
   textAlign: "auto",
   bgColor: "",
   textColor: "",
@@ -286,6 +330,26 @@ export const blocks = {
           ["full", "Tela toda"]
         ),
       },
+      mediaInset: {
+        type: "size",
+        label: "Margem lateral da foto (%)",
+        help: "valor exato da margem de cada lado quando a foto abre como cartão; 0 encosta nas bordas. Vazio segue o tamanho acima. Dá para arrastar as laterais da foto",
+        min: 0,
+        max: 30,
+        step: 0.5,
+        unit: "%",
+        auto: "do tamanho",
+      },
+      mediaInsetBottom: {
+        type: "size",
+        label: "Margem inferior da foto (%)",
+        help: "distância da foto até a base da tela quando abre como cartão. Dá para arrastar a base da foto",
+        min: 0,
+        max: 25,
+        step: 0.5,
+        unit: "%",
+        auto: "do tamanho",
+      },
       titleSize: {
         type: "select",
         label: "Tamanho do título",
@@ -313,6 +377,8 @@ export const blocks = {
     defaults: {
       variant: "cinematic",
       mediaSize: "large",
+      mediaInset: "",
+      mediaInsetBottom: "",
       titleSize: "md",
       imagePosition: "center",
       eyebrow: "Novo",
@@ -983,6 +1049,25 @@ export const blocks = {
           ["right", "Direita"]
         ),
       },
+      widthPct: {
+        type: "size",
+        label: "Largura da imagem (%)",
+        help: "em relação à largura do conteúdo. Dá para arrastar as laterais da imagem",
+        min: 10,
+        max: 100,
+        step: 1,
+        unit: "%",
+      },
+      heightPx: {
+        type: "size",
+        label: "Altura da imagem (px)",
+        help: "vazio usa a proporção escolhida. Dá para arrastar a base da imagem",
+        min: 120,
+        max: 1600,
+        step: 10,
+        unit: "px",
+        auto: "pela proporção",
+      },
       rounded: { type: "boolean", label: "Cantos arredondados" },
       href: { type: "text", label: "Link ao clicar (opcional)" },
       tone,
@@ -994,6 +1079,8 @@ export const blocks = {
       ratio: "16/9",
       fit: "cover",
       position: "center",
+      widthPct: 100,
+      heightPx: "",
       rounded: true,
       href: "",
       tone: "auto",
