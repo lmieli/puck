@@ -17,13 +17,14 @@ export async function POST(req: Request) {
         { status: 429 }
       );
     recent.set(ip, [...hits, now]);
-    const body = await jsonBody<Record<string, string>>(req);
+    const body = await jsonBody<Record<string, unknown>>(req);
     addLead(String(body.site || ""), {
       page: String(body.page || "/"),
       name: String(body.name || ""),
       email: String(body.email || ""),
       phone: String(body.phone || ""),
       message: String(body.message || ""),
+      origin: body.origin,
     });
     return NextResponse.json({ ok: true });
   } catch (e) {

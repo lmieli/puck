@@ -8,17 +8,18 @@ Construída sobre o editor [Puck](../../packages/core) deste repositório. A IA 
 
 ## O que o produto faz
 
-| Área                | Recursos                                                                                                                                                                                                |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Vários clientes** | Cada site é um cliente (tenant). Usuários têm papel por site. A agência vê todos; o cliente só vê o dele.                                                                                               |
-| **Edição por IA**   | Painel "IA" no editor. A pessoa descreve a mudança e a página muda ao vivo, bloco a bloco. Entende o bloco selecionado ("mude este título"). Cria um site inteiro a partir de uma descrição do negócio. |
-| **Editor visual**   | Arrastar e soltar, campos em português, envio de imagens, cores, pré-visualização em celular, tablet e computador. Rascunho salvo automaticamente.                                                      |
-| **Publicação**      | Rascunho e publicado separados. Publicar não precisa de deploy. Cada publicação vira uma versão.                                                                                                        |
-| **Histórico**       | Painel "Versões" no editor: abrir qualquer versão no editor ou restaurar (republica sem apagar nada). Desfazer/refazer na sessão.                                                                       |
-| **Papéis**          | Agência (todos os sites), Administrador do site (publica, restaura, domínios, equipe), Editor (edita e envia para revisão; não publica nem apaga blocos). Verificado no servidor em toda chamada.       |
-| **Domínios**        | Domínio próprio do cliente com verificação por registro TXT e checagem de CNAME. Endereço provisório `<site>.<domínio raiz>`.                                                                           |
-| **Contatos**        | O bloco "Formulário de contato" grava as mensagens no painel do cliente (aba Contatos), com limite de envio por IP.                                                                                     |
-| **Atividade**       | Registro de publicações, restaurações, pedidos de revisão, uso da IA, domínios e acessos.                                                                                                               |
+| Área                | Recursos                                                                                                                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vários clientes** | Cada site é um cliente (tenant). Usuários têm papel por site. A agência vê todos; o cliente só vê o dele.                                                                                                  |
+| **Edição por IA**   | Painel "IA" no editor. A pessoa descreve a mudança e a página muda ao vivo, bloco a bloco. Entende o bloco selecionado ("mude este título"). Cria um site inteiro a partir de uma descrição do negócio.    |
+| **Editor visual**   | Arrastar e soltar, campos em português, envio de imagens, cores, pré-visualização em celular, tablet e computador. Rascunho salvo automaticamente.                                                         |
+| **Publicação**      | Rascunho e publicado separados. Publicar não precisa de deploy. Cada publicação vira uma versão.                                                                                                           |
+| **Histórico**       | Painel "Versões" no editor: abrir qualquer versão no editor ou restaurar (republica sem apagar nada). Desfazer/refazer na sessão.                                                                          |
+| **Papéis**          | Agência (todos os sites), Administrador do site (publica, restaura, domínios, equipe), Editor (edita e envia para revisão; não publica nem apaga blocos). Verificado no servidor em toda chamada.          |
+| **Domínios**        | Domínio próprio do cliente com verificação por registro TXT e checagem de CNAME. Endereço provisório `<site>.<domínio raiz>`.                                                                              |
+| **Contatos**        | O bloco "Formulário de contato" grava as mensagens no painel do cliente (aba Contatos), com limite de envio por IP.                                                                                        |
+| **Rastreamento**    | Meta Pixel, Google Analytics 4, Google Ads, TikTok e Pinterest só com o ID, aviso de cookies (LGPD), conversão ao enviar o formulário, origem da campanha em cada contato e contagem de visitas no painel. |
+| **Atividade**       | Registro de publicações, restaurações, pedidos de revisão, uso da IA, domínios e acessos.                                                                                                                  |
 
 ## Blocos
 
@@ -106,6 +107,28 @@ Cada chamada ao modelo é cobrada pelos tokens que o provedor informou (entrada 
 O catálogo inicial traz Claude Sonnet 5.5 (padrão), Claude Opus 5.5, GPT-6.1 Terra, Gemini 3.8 Flash e Claude Haiku 5.5. Em bancos criados com o catálogo antigo, o servidor adiciona esses modelos uma única vez na inicialização e desativa os antigos (Claude Sonnet 4.5, Claude Opus 4.1, Gemini 2.5 Flash e GPT-4o mini) que nenhum cliente usa. Clientes que escolheram um modelo antigo continuam com ele até a agência trocar.
 
 Os preços iniciais são exemplos (1 crédito = US$ 0,001, sem margem): confira os preços atuais na OpenRouter e defina os seus acima do custo. Uma chamada interrompida pelo usuário só é cobrada se o provedor já tiver informado o uso.
+
+## Rastreamento e visitas
+
+Aba **Rastreamento** do site (administradores) e aba **Visitas** (todos). Equivalente ao PixelYourSite, mas **sem o cliente colar script**: ele digita só o ID de cada ferramenta.
+
+| Ferramenta                                     | O que o cliente informa                                |
+| ---------------------------------------------- | ------------------------------------------------------ |
+| Meta Pixel (Facebook e Instagram)              | ID do pixel (só números)                               |
+| Google Analytics 4                             | ID da métrica (`G-…`)                                  |
+| Google Ads                                     | ID da tag (`AW-…`) e, opcional, o rótulo da conversão  |
+| TikTok Pixel e Pinterest Tag                   | ID do pixel / da tag                                   |
+| Search Console e domínio do Meta (verificação) | O valor do meta tag (não precisa de aceite de cookies) |
+
+**Por que só o ID.** Cada ID é validado no formato da plataforma e encaixado no código oficial, que mora em `lib/tracking.ts`. Um script colado é recusado. O código que roda nos sites é sempre o do sistema, e um cliente não consegue atacar o painel nem os outros clientes por aqui.
+
+- **Consentimento (LGPD).** Com a opção ligada (padrão), um aviso de cookies aparece e **nenhuma ferramenta de terceiros carrega antes do "Aceitar"**. A escolha fica no navegador, e um botão "Cookies" permite mudar. Recusar depois de aceitar recarrega a página sem as ferramentas. Sem nenhum ID configurado, não há aviso.
+- **Eventos.** PageView automático. O envio do formulário de contato vira Lead no Meta, `generate_lead` (e a conversão, se houver rótulo) no Google, SubmitForm no TikTok e lead no Pinterest. Cliques nos botões principais viram `cta_click` / CTAClick.
+- **Origem em cada contato.** UTM, `gclid`, `fbclid`, `ttclid` e o site de origem ficam guardados só na aba do navegador e vão com o formulário. A aba Contatos mostra a coluna **Origem** (por exemplo `google / cpc`).
+- **Visitas.** Contador por dia, página e origem, **sem cookies, sem IP e sem dado pessoal**. Robôs de busca e monitores não entram. Só páginas publicadas contam. Não distingue visitantes únicos: é a contagem de aberturas de página.
+- **Código próprio (só equipe da agência).** Para Google Tag Manager, chat e o que não tem campo, a conta de agência pode colar HTML no `<head>` do site. Carrega depois do aceite de cookies. **Cole só código de fonte confiável:** ele roda com o mesmo poder do site, e no endereço provisório o site divide o domínio com o painel. A trava é no servidor: cliente, mesmo administrador do site, não consegue salvar esse campo.
+
+Não faz (ainda): envio de conversões pelo servidor (Meta Conversions API) e eventos personalizados por regra, como "rolou 75% da página".
 
 ## Rodar
 

@@ -102,6 +102,15 @@ CREATE TABLE IF NOT EXISTS tokens (
   used_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS page_views (
+  site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+  day TEXT NOT NULL,
+  path TEXT NOT NULL,
+  source TEXT NOT NULL,
+  views INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (site_id, day, path, source)
+);
+
 CREATE TABLE IF NOT EXISTS ai_models (
   id TEXT PRIMARY KEY,
   label TEXT NOT NULL,
@@ -142,6 +151,19 @@ function migrate(conn: Database.Database) {
   ).map((c) => c.name);
   if (!cols.includes("ai_model"))
     conn.exec("ALTER TABLE sites ADD COLUMN ai_model TEXT");
+  if (!cols.includes("tracking"))
+    conn.exec(
+      "ALTER TABLE sites ADD COLUMN tracking TEXT NOT NULL DEFAULT '{}'"
+    );
+  if (!cols.includes("head_script"))
+    conn.exec(
+      "ALTER TABLE sites ADD COLUMN head_script TEXT NOT NULL DEFAULT ''"
+    );
+  const leadCols = (
+    conn.prepare("PRAGMA table_info(leads)").all() as { name: string }[]
+  ).map((c) => c.name);
+  if (!leadCols.includes("origin"))
+    conn.exec("ALTER TABLE leads ADD COLUMN origin TEXT NOT NULL DEFAULT ''");
   if (!cols.includes("credits"))
     conn.exec(
       "ALTER TABLE sites ADD COLUMN credits INTEGER NOT NULL DEFAULT 0"

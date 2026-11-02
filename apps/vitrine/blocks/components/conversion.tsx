@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { readOrigin } from "../../components/site/attribution";
 import { useReveal } from "../motion";
 import { Buttons, Media, Section, type ButtonItem, type PropsOf } from "../ui";
 
@@ -75,7 +76,12 @@ export function Contact(
       const res = await fetch("/api/public/leads", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ site, page, ...Object.fromEntries(form) }),
+        body: JSON.stringify({
+          site,
+          page,
+          ...Object.fromEntries(form),
+          origin: readOrigin(),
+        }),
       });
       if (!res.ok)
         throw new Error(
@@ -83,6 +89,8 @@ export function Contact(
             "Não foi possível enviar."
         );
       setState("sent");
+      // Tells the tracking pixels (if the site has any) that a lead arrived.
+      window.dispatchEvent(new Event("vitrine:lead"));
     } catch (err) {
       setError((err as Error).message);
       setState("error");

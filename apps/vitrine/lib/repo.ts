@@ -15,6 +15,7 @@ import { db, tx } from "./db";
 import { appUrl, sendMail } from "./mail";
 import { insertSite } from "./seed";
 import { buildTemplate, type TemplateId } from "./templates";
+import { sanitizeOrigin } from "./tracking";
 
 export type Site = {
   id: string;
@@ -23,6 +24,10 @@ export type Site = {
   template: string;
   ai_model: string | null;
   credits: number;
+  /** JSON of tracking IDs and flags; read it with getTracking(). */
+  tracking: string;
+  /** Free <head> code, settable only by platform admins. */
+  head_script: string;
   created_at: string;
 };
 export type PageRow = {
@@ -669,6 +674,7 @@ export function addLead(
     email: string;
     phone?: string;
     message?: string;
+    origin?: unknown;
   }
 ) {
   const site = getSiteBySlug(siteSlug);
@@ -679,7 +685,7 @@ export function addLead(
     throw new HttpError(400, "Informe nome e e-mail válidos.");
   db()
     .prepare(
-      "INSERT INTO leads (id, site_id, page, name, email, phone, message) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO leads (id, site_id, page, name, email, phone, message, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .run(
       randomUUID(),
@@ -688,7 +694,8 @@ export function addLead(
       name,
       email,
       (input.phone || "").slice(0, 40),
-      (input.message || "").slice(0, 4000)
+      (input.message || "").slice(0, 4000),
+      JSON.stringify(sanitizeOrigin(input.origin))
     );
 }
 
@@ -704,6 +711,7 @@ export function listLeads(siteId: string) {
     email: string;
     phone: string;
     message: string;
+    origin: string;
     created_at: string;
   }[];
 }

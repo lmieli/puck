@@ -18,6 +18,10 @@ import {
   SimpleForm,
 } from "@/components/dash/forms";
 import { Ledger } from "@/components/dash/Ledger";
+import { TrackingPanel } from "@/components/dash/TrackingPanel";
+import { Visits } from "@/components/dash/Visits";
+import { getTracking, viewSummary } from "@/lib/analytics";
+import { sanitizeOrigin, sourceLabel } from "@/lib/tracking";
 import { listLedger, modelForSite, usageSummary } from "@/lib/credits";
 import { timeAgo } from "@/lib/time";
 import { hostingProvider } from "@/lib/hosting";
@@ -45,6 +49,8 @@ const tabs = [
   ["dominios", "Domínios"],
   ["equipe", "Equipe"],
   ["contatos", "Contatos"],
+  ["visitas", "Visitas"],
+  ["rastreamento", "Rastreamento"],
   ["creditos", "IA e créditos"],
   ["atividade", "Atividade"],
 ] as const;
@@ -108,7 +114,9 @@ export default async function SitePage({ params, searchParams }: Params) {
 
       <nav className="d-tabs" aria-label="Seções do site">
         {tabs
-          .filter(([id]) => id !== "creditos" || isAdmin)
+          .filter(
+            ([id]) => (id !== "creditos" && id !== "rastreamento") || isAdmin
+          )
           .map(([id, label]) => (
             <Link
               key={id}
@@ -435,6 +443,7 @@ export default async function SitePage({ params, searchParams }: Params) {
                       <th>Nome</th>
                       <th>Contato</th>
                       <th>Mensagem</th>
+                      <th>Origem</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -450,6 +459,15 @@ export default async function SitePage({ params, searchParams }: Params) {
                           {l.phone && <small>{l.phone}</small>}
                         </td>
                         <td className="d-message">{l.message}</td>
+                        <td className="d-muted">
+                          {(() => {
+                            let o = {};
+                            try {
+                              o = sanitizeOrigin(JSON.parse(l.origin || "{}"));
+                            } catch {}
+                            return l.origin ? sourceLabel(o) : "—";
+                          })()}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -458,6 +476,27 @@ export default async function SitePage({ params, searchParams }: Params) {
             );
           })()}
         </section>
+      )}
+
+      {tab === "visitas" && (
+        <Visits
+          summary={viewSummary(site.id, 30)}
+          enabled={getTracking(site).views}
+          leads30={
+            listLeads(site.id).filter(
+              (l) => Date.now() - Date.parse(l.created_at + "Z") < 30 * 864e5
+            ).length
+          }
+        />
+      )}
+
+      {tab === "rastreamento" && isAdmin && (
+        <TrackingPanel
+          slug={site.slug}
+          tracking={getTracking(site)}
+          headScript={site.head_script}
+          isPlatformAdmin={!!user.is_super_admin}
+        />
       )}
 
       {tab === "creditos" && isAdmin && (
