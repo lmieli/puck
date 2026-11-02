@@ -114,10 +114,14 @@ pnpm --filter vitrine test
 | `app/(dash)`, `app/(editor)`  | Painel e editor.                                               |
 | `app/sites`, `app/domain`     | Sites publicados (por endereço e por domínio).                 |
 
-## Antes de ir para produção
+## Produção
 
-- **Banco:** o SQLite embutido do Node serve para uma instância. Para várias instâncias ou hospedagem serverless, troque `lib/db.ts` por Postgres (o resto usa só as funções de `lib/repo.ts`). O módulo `node:sqlite` ainda é experimental no Node 22; o projeto pede Node 24.
-- **Arquivos enviados:** ficam em disco (`data/uploads`). Em produção, use S3 ou similar.
-- **Certificados HTTPS dos domínios:** use uma hospedagem que emita sozinha (Vercel Domains API, Cloudflare for SaaS ou Caddy com TLS sob demanda).
-- **Convites:** hoje o painel mostra uma senha provisória uma vez. Ligue um serviço de e-mail para enviar convites e redefinir senhas.
-- **Imagens das demonstrações:** vêm do Unsplash e do site atual da Gemini. Hospede as imagens dos clientes na plataforma.
+| Tema               | Como funciona                                                                                                                                                                                                                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Banco              | SQLite via `better-sqlite3` (estável, modo WAL), em `VITRINE_DATA_DIR`. Atende muito bem uma instância com disco persistente. Para várias instâncias, troque `lib/db.ts` por Postgres; o resto do código usa só `lib/repo.ts`.                                                     |
+| Imagens enviadas   | Com `VITRINE_S3_BUCKET`, vão para qualquer serviço compatível com S3 (AWS S3, Cloudflare R2, MinIO). Sem ele, ficam em disco e são servidas por `/media`.                                                                                                                          |
+| Convites e senhas  | Convites e redefinição de senha por link de uso único (guardado só como hash, expira em 7 dias / 2 horas). Com `RESEND_API_KEY`, os links vão por e-mail; sem ele, o painel mostra o link para o administrador enviar.                                                             |
+| HTTPS dos domínios | Na Vercel (`VERCEL_TOKEN` + `VERCEL_PROJECT_ID`), cada domínio adicionado é ligado ao projeto e a Vercel emite o certificado. Em servidor próprio, use o `deploy/Caddyfile`: o Caddy emite certificados sob demanda e pergunta a `/api/tls/check` se o domínio pertence a um site. |
+| Edição por IA      | `ANTHROPIC_API_KEY`. Sem a chave, o resto do produto funciona e o painel avisa o que falta.                                                                                                                                                                                        |
+
+Variáveis extras: `VITRINE_APP_URL` (endereço do painel, usado nos links de convite), `VITRINE_S3_BUCKET`, `VITRINE_S3_REGION`, `VITRINE_S3_ENDPOINT`, `VITRINE_S3_PUBLIC_URL` (mais as credenciais padrão `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`), `RESEND_API_KEY`, `VITRINE_MAIL_FROM`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`.

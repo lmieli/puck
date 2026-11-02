@@ -26,6 +26,9 @@ export default async function LoginPage() {
           <h2>Entrar</h2>
           <p className="d-muted">Use o e-mail e a senha da sua conta.</p>
           <LoginForm action={login} />
+          <a href="/esqueci" className="d-forgot">
+            Esqueci minha senha
+          </a>
           {demo && (
             <div className="d-demo">
               <strong>Contas de demonstração</strong> (senha{" "}

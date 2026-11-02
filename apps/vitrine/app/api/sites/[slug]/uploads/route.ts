@@ -1,10 +1,8 @@
 import { randomUUID } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
 import { withUser } from "@/lib/api";
 import { HttpError } from "@/lib/auth";
-import { uploadsDir } from "@/lib/db";
 import { siteFor } from "@/lib/repo";
+import { saveUpload } from "@/lib/storage";
 
 const TYPES: Record<string, string> = {
   "image/png": "png",
@@ -35,13 +33,13 @@ export async function POST(
         "Formato não suportado. Use PNG, JPG, WebP, GIF, AVIF, MP4 ou GLB."
       );
     if (file.size > MAX) throw new HttpError(413, "Arquivo maior que 10 MB.");
-    const dir = path.join(/*turbopackIgnore: true*/ uploadsDir(), site.id);
-    await fs.mkdir(dir, { recursive: true });
     const name = `${randomUUID()}.${ext}`;
-    await fs.writeFile(
-      path.join(/*turbopackIgnore: true*/ dir, name),
-      Buffer.from(await file.arrayBuffer())
+    const url = await saveUpload(
+      site.id,
+      name,
+      Buffer.from(await file.arrayBuffer()),
+      file.type || "application/octet-stream"
     );
-    return { url: `/media/${site.id}/${name}` };
+    return { url };
   });
 }

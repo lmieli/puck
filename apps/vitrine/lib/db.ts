@@ -1,5 +1,5 @@
 import "server-only";
-import { DatabaseSync } from "node:sqlite";
+import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 import { seed } from "./seed";
@@ -9,7 +9,7 @@ const DATA_DIR =
   path.join(/*turbopackIgnore: true*/ process.cwd(), "data");
 
 declare global {
-  var __vitrineDb: DatabaseSync | undefined;
+  var __vitrineDb: Database.Database | undefined;
 }
 
 const SCHEMA = `
@@ -93,6 +93,14 @@ CREATE TABLE IF NOT EXISTS leads (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS tokens (
+  token_hash TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('invite', 'reset')),
+  expires_at TEXT NOT NULL,
+  used_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS activity (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
@@ -103,10 +111,10 @@ CREATE TABLE IF NOT EXISTS activity (
 );
 `;
 
-export function db(): DatabaseSync {
+export function db(): Database.Database {
   if (!globalThis.__vitrineDb) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
-    const conn = new DatabaseSync(
+    const conn = new Database(
       path.join(/*turbopackIgnore: true*/ DATA_DIR, "vitrine.db")
     );
     conn.exec(SCHEMA);

@@ -31,6 +31,13 @@ function Feedback({ state }: { state: FormState }) {
         {state.error}
       </p>
     );
+  if (state.ok && state.link)
+    return (
+      <div className="d-feedback d-feedback-ok" role="status">
+        <p>{state.ok}</p>
+        <CopyText text={state.link} />
+      </div>
+    );
   if (state.ok)
     return (
       <p className="d-feedback d-feedback-ok" role="status">
@@ -253,5 +260,32 @@ export function CopyText({ text }: { text: string }) {
       <code>{text}</code>
       <span>{done ? "Copiado" : "Copiar"}</span>
     </button>
+  );
+}
+
+export function SimpleForm({
+  action,
+  children,
+  submit,
+  pendingText,
+  className = "d-form",
+  submitClass = "d-btn d-btn-primary d-btn-block",
+}: {
+  action: Action;
+  children?: React.ReactNode;
+  submit: string;
+  pendingText: string;
+  className?: string;
+  submitClass?: string;
+}) {
+  const [state, run] = useActionState(action, undefined);
+  return (
+    <form action={run} className={className}>
+      {children}
+      <Feedback state={state} />
+      <Submit pendingText={pendingText} className={submitClass}>
+        {submit}
+      </Submit>
+    </form>
   );
 }

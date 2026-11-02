@@ -5,13 +5,20 @@ import {
   destroySite,
   dropDomain,
   invite,
+  memberLink,
   newDomain,
   newPage,
   removePage,
   revoke,
 } from "@/app/actions";
-import { ConfirmButton, CopyText, InlineForm } from "@/components/dash/forms";
+import {
+  ConfirmButton,
+  CopyText,
+  InlineForm,
+  SimpleForm,
+} from "@/components/dash/forms";
 import { timeAgo } from "@/lib/time";
+import { hostingProvider } from "@/lib/hosting";
 import { atLeast, HttpError, requireUser } from "@/lib/auth";
 import {
   APP_ROOT_DOMAIN,
@@ -304,8 +311,9 @@ export default async function SitePage({ params, searchParams }: Params) {
                 />
               </InlineForm>
               <p className="d-muted d-small">
-                O certificado HTTPS é emitido automaticamente pela hospedagem
-                assim que o DNS aponta para a plataforma.
+                {hostingProvider() === "vercel"
+                  ? "O domínio é ligado ao projeto na Vercel, que emite e renova o certificado HTTPS quando o DNS apontar para a plataforma."
+                  : "O certificado HTTPS é emitido na primeira visita pelo Caddy (TLS sob demanda), que consulta a plataforma antes de emitir. Veja deploy/Caddyfile."}
               </p>
             </div>
           )}
@@ -340,11 +348,20 @@ export default async function SitePage({ params, searchParams }: Params) {
                   </td>
                   <td className="d-row-actions">
                     {isAdmin && m.id !== user.id && (
-                      <ConfirmButton
-                        action={revoke.bind(null, site.slug, m.id)}
-                        label="Remover acesso"
-                        confirmLabel="Remover"
-                      />
+                      <>
+                        <SimpleForm
+                          action={memberLink.bind(null, site.slug, m.id)}
+                          submit="Gerar link de acesso"
+                          pendingText="Gerando…"
+                          className="d-link-form"
+                          submitClass="d-btn d-btn-sm"
+                        />
+                        <ConfirmButton
+                          action={revoke.bind(null, site.slug, m.id)}
+                          label="Remover acesso"
+                          confirmLabel="Remover"
+                        />
+                      </>
                     )}
                   </td>
                 </tr>

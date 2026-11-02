@@ -1,4 +1,4 @@
-import type { DatabaseSync } from "node:sqlite";
+import type Database from "better-sqlite3";
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import type { PageData } from "../ai/page-ops.ts";
 import { buildTemplate, type TemplateId } from "./templates.ts";
@@ -10,7 +10,7 @@ function hash(password: string) {
 
 /** Insert a site and its pages, publishing each page as version 1. */
 export function insertSite(
-  conn: DatabaseSync,
+  conn: Database.Database,
   opts: {
     slug: string;
     name: string;
@@ -40,7 +40,7 @@ export function insertSite(
 }
 
 function insertUser(
-  conn: DatabaseSync,
+  conn: Database.Database,
   email: string,
   name: string,
   password: string,
@@ -145,7 +145,7 @@ function geminiPages() {
   return pages;
 }
 
-export function seed(conn: DatabaseSync) {
+export function seed(conn: Database.Database) {
   const count = conn.prepare("SELECT COUNT(*) AS n FROM users").get() as {
     n: number;
   };

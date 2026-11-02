@@ -1,5 +1,5 @@
 import "server-only";
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { resolveCname, resolve4, resolveTxt } from "node:dns/promises";
 import type { PageData } from "../ai/page-ops.ts";
 import {
@@ -11,6 +11,7 @@ import {
   type User,
 } from "./auth";
 import { db, tx } from "./db";
+import { appUrl, sendMail } from "./mail";
 import { insertSite } from "./seed";
 import { buildTemplate, type TemplateId } from "./templates";
 
@@ -395,13 +396,18 @@ export function addDomain(user: User, slug: string, rawHost: string) {
     )
     .run(randomUUID(), site.id, host, token);
   log(site.id, user.id, "domain", `Adicionou o domínio ${host}`);
+  return host;
 }
 
 export function removeDomain(user: User, slug: string, id: string) {
   const { site } = siteFor(user, slug, "admin");
+  const row = db()
+    .prepare("SELECT host FROM domains WHERE id = ? AND site_id = ?")
+    .get(id, site.id) as { host: string } | undefined;
   db()
     .prepare("DELETE FROM domains WHERE id = ? AND site_id = ?")
     .run(id, site.id);
+  return row?.host ?? null;
 }
 
 /** Check the TXT ownership record and that the host points at the platform. */
@@ -476,7 +482,85 @@ export function listMembers(siteId: string) {
   }[];
 }
 
-export function addMember(
+/* ------------------------------ access links --------------------------- */
+
+const hashToken = (t: string) => createHash("sha256").update(t).digest("hex");
+
+/** One-time link that lets a user set a password (invite or reset). */
+export function createAccessLink(userId: string, kind: "invite" | "reset") {
+  const token = randomBytes(24).toString("base64url");
+  const hours = kind === "invite" ? 24 * 7 : 2;
+  db()
+    .prepare(
+      "INSERT INTO tokens (token_hash, user_id, kind, expires_at) VALUES (?, ?, ?, ?)"
+    )
+    .run(
+      hashToken(token),
+      userId,
+      kind,
+      new Date(Date.now() + hours * 3600e3).toISOString()
+    );
+  return appUrl(`/acesso/${token}`);
+}
+
+export function readAccessLink(token: string) {
+  return (
+    (db()
+      .prepare(
+        `SELECT t.token_hash, t.kind, u.id AS user_id, u.email, u.name FROM tokens t JOIN users u ON u.id = t.user_id
+         WHERE t.token_hash = ? AND t.used_at IS NULL AND t.expires_at > ?`
+      )
+      .get(hashToken(token), new Date().toISOString()) as
+      | {
+          token_hash: string;
+          kind: "invite" | "reset";
+          user_id: string;
+          email: string;
+          name: string;
+        }
+      | undefined) ?? null
+  );
+}
+
+export function redeemAccessLink(token: string, password: string) {
+  if (password.length < 8)
+    throw new HttpError(400, "A senha precisa ter pelo menos 8 caracteres.");
+  const link = readAccessLink(token);
+  if (!link)
+    throw new HttpError(
+      410,
+      "Este link expirou ou já foi usado. Peça um novo."
+    );
+  tx(() => {
+    db()
+      .prepare("UPDATE users SET password_hash = ? WHERE id = ?")
+      .run(hashPassword(password), link.user_id);
+    db()
+      .prepare(
+        "UPDATE tokens SET used_at = datetime('now') WHERE token_hash = ?"
+      )
+      .run(link.token_hash);
+  });
+  return link.user_id;
+}
+
+/** Self-service reset: e-mails a link when e-mail is configured. Never reveals whether the account exists. */
+export async function requestPasswordReset(email: string) {
+  const user = db()
+    .prepare("SELECT id, name FROM users WHERE email = ?")
+    .get(email.trim().toLowerCase()) as
+    | { id: string; name: string }
+    | undefined;
+  if (!user) return;
+  const link = createAccessLink(user.id, "reset");
+  await sendMail(
+    email,
+    "Redefinir sua senha na Vitrine",
+    `Olá, ${user.name}.\n\nPara criar uma nova senha, abra o link abaixo (vale por 2 horas):\n${link}\n\nSe você não pediu, ignore este e-mail.`
+  );
+}
+
+export async function addMember(
   user: User,
   slug: string,
   email: string,
@@ -490,21 +574,17 @@ export function addMember(
   let target = db()
     .prepare("SELECT id FROM users WHERE email = ?")
     .get(cleanEmail) as { id: string } | undefined;
-  let tempPassword: string | null = null;
+  let link: string | null = null;
   if (!target) {
-    tempPassword = randomBytes(6).toString("base64url");
     const id = randomUUID();
+    // "!" is never a valid hash: the account has no password until the invite is used.
     db()
       .prepare(
-        "INSERT INTO users (id, email, name, password_hash) VALUES (?, ?, ?, ?)"
+        "INSERT INTO users (id, email, name, password_hash) VALUES (?, ?, ?, '!')"
       )
-      .run(
-        id,
-        cleanEmail,
-        name.trim() || cleanEmail,
-        hashPassword(tempPassword)
-      );
+      .run(id, cleanEmail, name.trim() || cleanEmail);
     target = { id };
+    link = createAccessLink(id, "invite");
   }
   db()
     .prepare(
@@ -512,7 +592,24 @@ export function addMember(
     )
     .run(target.id, site.id, role);
   log(site.id, user.id, "member", `Deu acesso de ${role} a ${cleanEmail}`);
-  return tempPassword;
+  const emailed = link
+    ? await sendMail(
+        cleanEmail,
+        `Seu acesso ao site ${site.name}`,
+        `Olá!\n\n${user.name} deu a você acesso ao site ${site.name} na Vitrine.\nCrie sua senha neste link (vale por 7 dias):\n${link}`
+      )
+    : false;
+  return { link, emailed };
+}
+
+/** Admin-generated sign-in link for a member who lost their password. */
+export function memberAccessLink(user: User, slug: string, memberId: string) {
+  const { site } = siteFor(user, slug, "admin");
+  const m = db()
+    .prepare("SELECT 1 FROM memberships WHERE site_id = ? AND user_id = ?")
+    .get(site.id, memberId);
+  if (!m) throw new HttpError(404, "Pessoa não encontrada neste site.");
+  return createAccessLink(memberId, "reset");
 }
 
 export function removeMember(user: User, slug: string, userId: string) {

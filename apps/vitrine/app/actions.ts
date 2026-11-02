@@ -10,10 +10,15 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { attachDomain, detachDomain } from "@/lib/hosting";
+import { mailConfigured } from "@/lib/mail";
 import {
   addDomain,
   addMember,
   createPage,
+  memberAccessLink,
+  requestPasswordReset,
+  redeemAccessLink,
   createSite,
   deletePage,
   deleteSite,
@@ -23,7 +28,9 @@ import {
 } from "@/lib/repo";
 import type { TemplateId } from "@/lib/templates";
 
-export type FormState = { error?: string; ok?: string } | undefined;
+export type FormState =
+  | { error?: string; ok?: string; link?: string }
+  | undefined;
 
 async function guard(
   fn: () => Promise<FormState | void> | FormState | void
@@ -113,9 +120,11 @@ export async function newDomain(
   form: FormData
 ): Promise<FormState> {
   const user = await requireUser();
-  const res = await guard(() =>
-    addDomain(user, slug, String(form.get("host") || ""))
-  );
+  let host = "";
+  const res = await guard(() => {
+    host = addDomain(user, slug, String(form.get("host") || ""));
+  });
+  if (host) await attachDomain(host);
   revalidatePath(`/app/s/${slug}`);
   return res?.error
     ? res
@@ -132,7 +141,11 @@ export async function checkDomain(slug: string, id: string) {
 
 export async function dropDomain(slug: string, id: string) {
   const user = await requireUser();
-  await guard(() => removeDomain(user, slug, id));
+  let host: string | null = null;
+  await guard(() => {
+    host = removeDomain(user, slug, id);
+  });
+  if (host) await detachDomain(host);
   revalidatePath(`/app/s/${slug}`);
 }
 
@@ -142,10 +155,13 @@ export async function invite(
   form: FormData
 ): Promise<FormState> {
   const user = await requireUser();
-  let temp: string | null = null;
+  let out: { link: string | null; emailed: boolean } = {
+    link: null,
+    emailed: false,
+  };
   const role = form.get("role") === "admin" ? "admin" : "editor";
-  const res = await guard(() => {
-    temp = addMember(
+  const res = await guard(async () => {
+    out = await addMember(
       user,
       slug,
       String(form.get("email") || ""),
@@ -155,11 +171,57 @@ export async function invite(
   });
   revalidatePath(`/app/s/${slug}`);
   if (res?.error) return res;
+  if (!out.link) return { ok: "Acesso concedido a um usuário que já existia." };
+  return out.emailed
+    ? { ok: "Convite enviado por e-mail. O link vale por 7 dias." }
+    : {
+        ok: "Acesso criado. Envie este link de convite à pessoa (vale por 7 dias):",
+        link: out.link,
+      };
+}
+
+export async function memberLink(
+  slug: string,
+  memberId: string,
+  _: FormState
+): Promise<FormState> {
+  const user = await requireUser();
+  let link = "";
+  const res = await guard(() => {
+    link = memberAccessLink(user, slug, memberId);
+  });
+  if (res?.error) return res;
+  return { ok: "Link para criar uma nova senha (vale por 2 horas):", link };
+}
+
+export async function forgotPassword(
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const email = String(form.get("email") || "");
+  await requestPasswordReset(email);
   return {
-    ok: temp
-      ? `Acesso criado. Senha provisória: ${temp} (mostrada só agora; envie à pessoa por um canal seguro).`
-      : "Acesso concedido a um usuário que já existia.",
+    ok: mailConfigured()
+      ? "Se existir uma conta com esse e-mail, enviamos um link para criar uma nova senha."
+      : "O envio de e-mail não está ativo neste servidor. Peça ao administrador do seu site um link de acesso.",
   };
+}
+
+export async function setPassword(
+  token: string,
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const password = String(form.get("password") || "");
+  if (password !== String(form.get("confirm") || ""))
+    return { error: "As senhas não conferem." };
+  let userId = "";
+  const res = await guard(() => {
+    userId = redeemAccessLink(token, password);
+  });
+  if (res?.error) return res;
+  await createSession(userId);
+  redirect("/app");
 }
 
 export async function revoke(slug: string, userId: string) {

@@ -882,3 +882,42 @@ code {
     white-space: normal;
   }
 }
+
+/* ---------- auth pages ---------- */
+
+.d-auth {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 40px 16px;
+}
+
+.d-auth .d-login-box {
+  background: var(--d-surface);
+  border: 1px solid var(--d-line);
+  border-radius: var(--d-radius);
+  padding: 32px;
+  gap: 12px;
+}
+
+.d-forgot {
+  font-size: 13px;
+  justify-self: center;
+  margin-top: 4px;
+}
+
+.d-link-form {
+  display: inline-grid;
+  gap: 6px;
+  justify-items: end;
+  text-align: left;
+  white-space: normal;
+}
+
+.d-link-form .d-feedback {
+  max-width: 340px;
+}
+
+.d-feedback p {
+  margin: 0 0 6px;
+}

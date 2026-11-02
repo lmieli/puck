@@ -1,0 +1,21 @@
+# Self-hosted deploy: Caddy terminates HTTPS for the dashboard and for every
+# customer domain, issuing Let's Encrypt certificates on demand after asking
+# Vitrine whether the domain belongs to a site.
+{
+	on_demand_tls {
+		ask http://127.0.0.1:3000/api/tls/check
+	}
+}
+
+# Dashboard
+app.suaempresa.com {
+	reverse_proxy 127.0.0.1:3000
+}
+
+# Customer domains and <slug>.suaempresa.com
+https:// {
+	tls {
+		on_demand
+	}
+	reverse_proxy 127.0.0.1:3000
+}

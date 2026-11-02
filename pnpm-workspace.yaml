@@ -14,6 +14,7 @@ allowBuilds:
   sharp: true # native image optimisation used by Next.js
   "@parcel/watcher": true # native file watcher used in dev
   unrs-resolver: true # native binding for the eslint import resolver
+  better-sqlite3: true # SQLite driver for the Vitrine app (apps/vitrine)
   nx: false # transitive (via lerna); native daemon not needed
   core-js: false # transitive (via posthog-js in demo); postinstall only prints a funding banner
 
