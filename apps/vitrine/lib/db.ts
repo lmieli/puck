@@ -2,6 +2,7 @@ import "server-only";
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
+import { DEFAULT_MODELS } from "../ai/pricing";
 import { seed } from "./seed";
 
 const DATA_DIR =
@@ -101,6 +102,29 @@ CREATE TABLE IF NOT EXISTS tokens (
   used_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS ai_models (
+  id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  in_per_mtok INTEGER NOT NULL,
+  out_per_mtok INTEGER NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS credit_ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+  user_id TEXT,
+  kind TEXT NOT NULL CHECK (kind IN ('grant', 'adjust', 'usage')),
+  amount INTEGER NOT NULL,
+  balance_after INTEGER NOT NULL,
+  model TEXT,
+  input_tokens INTEGER NOT NULL DEFAULT 0,
+  output_tokens INTEGER NOT NULL DEFAULT 0,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS ledger_site ON credit_ledger (site_id, id DESC);
+
 CREATE TABLE IF NOT EXISTS activity (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
@@ -111,6 +135,29 @@ CREATE TABLE IF NOT EXISTS activity (
 );
 `;
 
+/** Add columns introduced after the first release to existing databases. */
+function migrate(conn: Database.Database) {
+  const cols = (
+    conn.prepare("PRAGMA table_info(sites)").all() as { name: string }[]
+  ).map((c) => c.name);
+  if (!cols.includes("ai_model"))
+    conn.exec("ALTER TABLE sites ADD COLUMN ai_model TEXT");
+  if (!cols.includes("credits"))
+    conn.exec(
+      "ALTER TABLE sites ADD COLUMN credits INTEGER NOT NULL DEFAULT 0"
+    );
+  const has = conn.prepare("SELECT COUNT(*) AS n FROM ai_models").get() as {
+    n: number;
+  };
+  if (!has.n) {
+    const ins = conn.prepare(
+      "INSERT INTO ai_models (id, label, in_per_mtok, out_per_mtok) VALUES (?, ?, ?, ?)"
+    );
+    for (const m of DEFAULT_MODELS)
+      ins.run(m.id, m.label, m.inPerMtok, m.outPerMtok);
+  }
+}
+
 export function db(): Database.Database {
   if (!globalThis.__vitrineDb) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -118,6 +165,7 @@ export function db(): Database.Database {
       path.join(/*turbopackIgnore: true*/ DATA_DIR, "vitrine.db")
     );
     conn.exec(SCHEMA);
+    migrate(conn);
     globalThis.__vitrineDb = conn;
     seed(conn);
   }

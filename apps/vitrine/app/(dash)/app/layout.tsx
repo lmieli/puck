@@ -16,6 +16,9 @@ export default async function DashLayout({
         </Link>
         <nav className="d-topnav">
           <Link href="/app">Sites</Link>
+          {!!user.is_super_admin && (
+            <Link href="/app/admin">IA e créditos</Link>
+          )}
         </nav>
         <div className="d-user">
           <span className="d-avatar" aria-hidden>

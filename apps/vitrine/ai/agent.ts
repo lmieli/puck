@@ -1,21 +1,34 @@
-// The AI editing agent. Claude edits the page through tools that map to the
-// pure operations in page-ops.ts; each successful change is streamed to the
-// editor so the person watches the page change live.
+// The AI editing agent. The model (any model on OpenRouter) edits the page
+// through tools that map to the pure operations in page-ops.ts; each
+// successful change is streamed to the editor so the person watches the page
+// change live. Every model call is charged in credits from its real token use.
 
-import Anthropic from "@anthropic-ai/sdk";
 import { blockNames } from "../blocks/schema.ts";
 import { applyOperation, OpError, outline, type PageData } from "./page-ops.ts";
+import {
+  streamChat,
+  type ChatMessage,
+  type ToolSpec,
+  type Usage,
+} from "./openrouter.ts";
+import { FALLBACK_MODEL_ID } from "./pricing.ts";
 import { SYSTEM_PROMPT } from "./prompt.ts";
-
-export const AI_MODEL = process.env.VITRINE_AI_MODEL || "claude-opus-5-5";
 
 export type AgentEvent =
   | { type: "status"; message: string }
   | { type: "text"; delta: string }
   | { type: "action"; label: string }
   | { type: "page"; data: PageData }
+  | { type: "credits"; balance: number; cost: number }
   | { type: "done"; summary: string; data: PageData; actions: string[] }
   | { type: "error"; message: string };
+
+/** How the agent bills a site; implemented by the server (lib/credits.ts). */
+export type CreditMeter = {
+  model: string;
+  remaining: () => number;
+  charge: (usage: Usage) => { cost: number; balance: number };
+};
 
 export type AgentInput = {
   instruction: string;
@@ -25,16 +38,16 @@ export type AgentInput = {
   siteName?: string;
   pagePath?: string;
   mode?: "edit" | "build";
+  credits?: CreditMeter;
 };
 
 const objectProps = { type: "object", additionalProperties: true } as const;
 
-const tools: Anthropic.Beta.BetaTool[] = [
+const toolDefs = [
   {
     name: "insert_block",
     description:
       "Insere um bloco novo. Informe index (posição, 0 = topo) ou after_id (insere logo depois desse bloco). props pode ser parcial: o que faltar usa o padrão do bloco.",
-    eager_input_streaming: true,
     input_schema: {
       type: "object",
       properties: {
@@ -50,7 +63,6 @@ const tools: Anthropic.Beta.BetaTool[] = [
     name: "update_block",
     description:
       "Altera props de um bloco existente. Envie só as props que mudam; listas são substituídas inteiras.",
-    eager_input_streaming: true,
     input_schema: {
       type: "object",
       properties: { id: { type: "string" }, props: objectProps },
@@ -89,7 +101,6 @@ const tools: Anthropic.Beta.BetaTool[] = [
     name: "replace_content",
     description:
       "Substitui todos os blocos da página por uma lista nova. Use para criar uma página do zero ou refazer a página inteira.",
-    eager_input_streaming: true,
     input_schema: {
       type: "object",
       properties: {
@@ -109,6 +120,12 @@ const tools: Anthropic.Beta.BetaTool[] = [
     },
   },
 ];
+
+const tools: ToolSpec[] = toolDefs.map((t) => ({
+  name: t.name,
+  description: t.description,
+  parameters: t.input_schema as Record<string, unknown>,
+}));
 
 function buildUserMessage(input: AgentInput) {
   const selected = input.selectedId
@@ -133,11 +150,11 @@ function buildUserMessage(input: AgentInput) {
 
 export function aiConfigured() {
   return Boolean(
-    process.env.ANTHROPIC_API_KEY ||
-      process.env.ANTHROPIC_AUTH_TOKEN ||
-      process.env.VITRINE_AI_MOCK === "1"
+    process.env.OPENROUTER_API_KEY || process.env.VITRINE_AI_MOCK === "1"
   );
 }
+
+const MOCK_USAGE: Usage = { inputTokens: 2400, outputTokens: 600 };
 
 export async function runAgent(
   input: AgentInput,
@@ -146,128 +163,127 @@ export async function runAgent(
 ) {
   if (process.env.VITRINE_AI_MOCK === "1") {
     const { runMockAgent } = await import("./mock.ts");
-    return runMockAgent(input, emit);
+    const out = await runMockAgent(input, emit);
+    if (input.credits) {
+      const r = input.credits.charge(MOCK_USAGE);
+      emit({ type: "credits", balance: r.balance, cost: r.cost });
+    }
+    return out;
   }
 
-  const client = new Anthropic();
+  const model = input.credits?.model ?? FALLBACK_MODEL_ID;
+  const cacheable = model.startsWith("anthropic/");
   let page = input.page;
   const actions: string[] = [];
-  const messages: Anthropic.Beta.BetaMessageParam[] = [
+  const messages: ChatMessage[] = [
+    {
+      role: "system",
+      content: cacheable
+        ? [
+            {
+              type: "text",
+              text: SYSTEM_PROMPT,
+              cache_control: { type: "ephemeral" },
+            },
+          ]
+        : SYSTEM_PROMPT,
+    },
     ...(input.history ?? [])
       .slice(-8)
-      .map(
-        (h) =>
-          ({ role: h.role, content: h.text } as Anthropic.Beta.BetaMessageParam)
-      ),
+      .map((h) => ({ role: h.role, content: h.text } as ChatMessage)),
     { role: "user", content: buildUserMessage(input) },
   ];
-  // History must start with a user turn.
-  while (messages.length && messages[0].role !== "user") messages.shift();
+  // After the system prompt, history must start with a user turn.
+  while (messages.length > 1 && messages[1].role !== "user")
+    messages.splice(1, 1);
 
   let summary = "";
-  let jsonRetries = 0;
+  let exhausted = false;
 
   for (let turn = 0; turn < 14; turn++) {
+    if (input.credits && input.credits.remaining() <= 0) {
+      exhausted = true;
+      break;
+    }
     emit({
       type: "status",
       message: turn === 0 ? "Pensando…" : "Continuando…",
     });
-    const stream = client.beta.messages.stream(
-      {
-        model: AI_MODEL,
-        max_tokens: 64000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
-        thinking: { type: "adaptive" },
-        output_config: { effort: input.mode === "build" ? "high" : "medium" },
-        system: [
-          {
-            type: "text",
-            text: SYSTEM_PROMPT,
-            cache_control: { type: "ephemeral" },
-          },
-        ],
-        tools,
-        messages,
-      },
-      { signal }
-    );
-    stream.on("text", (delta) => emit({ type: "text", delta }));
-
-    let message: Anthropic.Beta.BetaMessage;
-    try {
-      message = await stream.finalMessage();
-      jsonRetries = 0;
-    } catch (err) {
-      if (
-        err instanceof Anthropic.APIError ||
-        signal?.aborted ||
-        jsonRetries++ >= 2
-      )
-        throw err;
-      continue; // a tool input could not be parsed; re-issue the turn
+    const result = await streamChat({
+      model,
+      messages,
+      tools,
+      maxTokens: 32000,
+      signal,
+      onText: (delta) => emit({ type: "text", delta }),
+    });
+    if (input.credits) {
+      const r = input.credits.charge(result.usage);
+      emit({ type: "credits", balance: r.balance, cost: r.cost });
     }
 
-    const text = message.content
-      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
+    const text = result.text.trim();
     if (text) summary = text;
 
-    if (message.stop_reason === "refusal") {
+    if (result.finishReason === "content_filter") {
       summary =
         "Não posso fazer essa alteração. Tente descrever o pedido de outra forma.";
       break;
     }
-    if (message.stop_reason === "pause_turn") {
-      messages.push({ role: "assistant", content: message.content });
-      continue;
-    }
-
-    const toolUses = message.content.filter(
-      (b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use"
-    );
-    if (toolUses.length === 0) break;
-    if (message.stop_reason === "max_tokens") {
+    if (result.toolCalls.length === 0) break;
+    if (result.finishReason === "length") {
       throw new Error(
         "A resposta da IA foi cortada antes de terminar. Tente um pedido menor."
       );
     }
 
-    messages.push({ role: "assistant", content: message.content });
-    const results: Anthropic.Beta.BetaToolResultBlockParam[] = [];
-    for (const use of toolUses) {
+    messages.push({
+      role: "assistant",
+      content: result.text || null,
+      tool_calls: result.toolCalls.map((c) => ({
+        id: c.id,
+        type: "function",
+        function: { name: c.name, arguments: c.arguments },
+      })),
+    });
+    for (const use of result.toolCalls) {
+      let content: string;
       try {
-        const r = applyOperation(page, use.name, use.input);
+        let args: unknown;
+        try {
+          args = JSON.parse(use.arguments || "{}");
+        } catch {
+          throw new OpError(
+            "Os argumentos da ferramenta não são um JSON válido. Envie de novo."
+          );
+        }
+        const r = applyOperation(page, use.name, args);
         page = r.page;
         actions.push(r.label);
         emit({ type: "action", label: r.label });
         emit({ type: "page", data: page });
-        results.push({
-          type: "tool_result",
-          tool_use_id: use.id,
-          content: `${r.message}\n\nResumo atualizado:\n${outline(page)}`,
-        });
+        content = `${r.message}\n\nResumo atualizado:\n${outline(page)}`;
       } catch (e) {
-        const msg =
+        content =
           e instanceof OpError ? e.message : `Erro: ${(e as Error).message}`;
-        results.push({
-          type: "tool_result",
-          tool_use_id: use.id,
-          is_error: true,
-          content: msg,
-        });
       }
+      messages.push({ role: "tool", tool_call_id: use.id, content });
     }
-    messages.push({ role: "user", content: results });
   }
 
-  const finalSummary =
+  let finalSummary =
     summary ||
     (actions.length
       ? `Feito: ${actions.join(", ")}.`
       : "Nenhuma alteração foi necessária.");
+  if (exhausted)
+    finalSummary = `${
+      summary ? summary + "\n\n" : ""
+    }Os créditos deste site acabaram${
+      actions.length
+        ? " no meio do pedido; o que já foi feito ficou no rascunho"
+        : ""
+    }. Peça mais créditos à agência.`;
   emit({ type: "done", summary: finalSummary, data: page, actions });
   return page;
 }

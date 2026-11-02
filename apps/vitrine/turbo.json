@@ -6,9 +6,8 @@
   "tasks": {
     "build": {
       "env": [
-        "ANTHROPIC_API_KEY",
-        "ANTHROPIC_AUTH_TOKEN",
-        "ANTHROPIC_BASE_URL",
+        "OPENROUTER_API_KEY",
+        "OPENROUTER_BASE_URL",
         "AWS_*",
         "RESEND_API_KEY",
         "VERCEL_PROJECT_ID",
@@ -19,9 +18,8 @@
     },
     "test": {
       "env": [
-        "ANTHROPIC_API_KEY",
-        "ANTHROPIC_AUTH_TOKEN",
-        "ANTHROPIC_BASE_URL",
+        "OPENROUTER_API_KEY",
+        "OPENROUTER_BASE_URL",
         "AWS_*",
         "RESEND_API_KEY",
         "VERCEL_PROJECT_ID",

@@ -24,7 +24,7 @@ export default async function NewSitePage() {
       {!aiConfigured() && (
         <p className="d-feedback d-feedback-warn">
           A IA não está ativa neste servidor (falta{" "}
-          <code>ANTHROPIC_API_KEY</code>). Use um modelo por enquanto.
+          <code>OPENROUTER_API_KEY</code>). Use um modelo por enquanto.
         </p>
       )}
       <NewSiteForm action={newSite} templates={templates} />

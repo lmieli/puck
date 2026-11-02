@@ -21,6 +21,8 @@ export type Site = {
   slug: string;
   name: string;
   template: string;
+  ai_model: string | null;
+  credits: number;
   created_at: string;
 };
 export type PageRow = {

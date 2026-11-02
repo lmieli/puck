@@ -35,12 +35,15 @@ export function AiPanel({
   path,
   enabled,
   initialPrompt,
+  initialCredits,
 }: {
   siteSlug: string;
   path: string;
   enabled: boolean;
   initialPrompt?: string;
+  initialCredits: number;
 }) {
+  const [credits, setCredits] = useState(initialCredits);
   const dispatch = usePuck((s) => s.dispatch);
   const selected = usePuck((s) => s.selectedItem);
   const getPuck = useGetPuck();
@@ -157,6 +160,7 @@ export function AiPanel({
                 data: e.data,
                 recordHistory: false,
               } as never);
+            else if (e.type === "credits") setCredits(e.balance);
             else if (e.type === "done") {
               if (e.actions.length)
                 dispatch({
@@ -221,7 +225,7 @@ export function AiPanel({
             {!enabled && (
               <p className="vx-ai-warning">
                 A IA ainda não está ativa neste servidor. Peça ao administrador
-                para definir <code>ANTHROPIC_API_KEY</code>.
+                para definir <code>OPENROUTER_API_KEY</code>.
               </p>
             )}
             <p className="vx-ai-hint">
@@ -285,7 +289,7 @@ export function AiPanel({
         <textarea
           value={input}
           rows={3}
-          disabled={!enabled}
+          disabled={!enabled || credits <= 0}
           placeholder={
             selectedLabel
               ? `O que mudar em "${selectedLabel}"?`
@@ -300,7 +304,14 @@ export function AiPanel({
           }}
         />
         <div className="vx-ai-input-row">
-          <span>Enter envia · Shift+Enter quebra linha</span>
+          <span
+            className={credits <= 0 ? "vx-credits is-empty" : "vx-credits"}
+            title="Os créditos são gastos conforme os tokens usados pela IA"
+          >
+            {credits <= 0
+              ? "Sem créditos de IA"
+              : `${credits.toLocaleString("pt-BR")} créditos`}
+          </span>
           {busy ? (
             <button
               type="button"
@@ -313,7 +324,7 @@ export function AiPanel({
             <button
               type="submit"
               className="vx-btn vx-btn-accent"
-              disabled={!enabled || !input.trim()}
+              disabled={!enabled || credits <= 0 || !input.trim()}
             >
               Enviar
             </button>

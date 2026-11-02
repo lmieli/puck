@@ -35,12 +35,13 @@ type Props = {
   role: Role;
   data: Data;
   aiEnabled: boolean;
+  aiCredits: number;
   initialPrompt?: string;
   liveUrl: string;
 };
 
 type HeaderState = {
-  props: Omit<Props, "data" | "aiEnabled" | "initialPrompt">;
+  props: Omit<Props, "data" | "aiEnabled" | "aiCredits" | "initialPrompt">;
   saveState: SaveState;
   onPublished: (v: number) => void;
 };
@@ -102,7 +103,7 @@ function HeaderActions({
   liveUrl,
   saveState,
   onPublished,
-}: Omit<Props, "data" | "aiEnabled" | "initialPrompt"> & {
+}: Omit<Props, "data" | "aiEnabled" | "aiCredits" | "initialPrompt"> & {
   saveState: SaveState;
   onPublished: (v: number) => void;
 }) {
@@ -200,7 +201,7 @@ function HeaderActions({
 const IFRAME = { enabled: true, waitForStyles: true } as const;
 
 export function Editor(props: Props) {
-  const { site, path, role, data, aiEnabled, initialPrompt } = props;
+  const { site, path, role, data, aiEnabled, aiCredits, initialPrompt } = props;
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [versionsKey, setVersionsKey] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -250,6 +251,7 @@ export function Editor(props: Props) {
             siteSlug={site.slug}
             path={path}
             enabled={aiEnabled}
+            initialCredits={aiCredits}
             initialPrompt={initialPrompt}
           />
         ),
@@ -281,7 +283,7 @@ export function Editor(props: Props) {
         ),
       },
     ],
-    [site.slug, path, aiEnabled, initialPrompt, role]
+    [site.slug, path, aiEnabled, aiCredits, initialPrompt, role]
   );
 
   const onPublished = useCallback(() => {

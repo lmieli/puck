@@ -921,3 +921,66 @@ code {
 .d-feedback p {
   margin: 0 0 6px;
 }
+
+/* ---------- IA e créditos ---------- */
+
+.d-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin: 18px 0 24px;
+}
+
+.d-stats > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--d-line);
+  border-radius: 12px;
+}
+
+.d-stats strong {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.d-neg {
+  color: var(--d-danger);
+}
+
+.d-pos {
+  color: var(--d-ok);
+}
+
+.d-admin td {
+  vertical-align: top;
+}
+
+.d-admin .d-inline-fields {
+  flex-wrap: wrap;
+}
+
+.d-model-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--d-line);
+}
+
+.d-model-row .d-inline-form {
+  flex: 1;
+}
+
+.d-model-id {
+  align-self: center;
+  font-size: 13px;
+  min-width: 220px;
+}
+
+.d-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}

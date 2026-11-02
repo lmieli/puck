@@ -44,6 +44,7 @@ export default async function EditPage({ params, searchParams }: Params) {
       role={role}
       data={fillDefaults(JSON.parse(page.draft)) as Data}
       aiEnabled={aiConfigured()}
+      aiCredits={site.credits}
       initialPrompt={sp.brief}
       liveUrl={`/sites/${site.slug}${path === "/" ? "" : path}`}
     />

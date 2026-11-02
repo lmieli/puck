@@ -235,7 +235,6 @@ export function BlockHandles({ withWidth = true }: { withWidth?: boolean }) {
     return (w?.firstElementChild as HTMLElement | null) ?? null;
   };
 
-   
   const measure = useCallback(() => {
     const w = wrapper();
     const sec = section();

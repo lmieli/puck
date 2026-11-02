@@ -63,7 +63,7 @@ Por segurança, não existe bloco de HTML ou script livre: os sites rodam no mes
 ## Como a IA funciona
 
 1. O painel envia o pedido, a página atual (JSON), o bloco selecionado e as últimas mensagens para `/api/ai`.
-2. O servidor confere login e papel e chama o Claude (`claude-opus-5-5`, pensamento adaptativo, streaming) com seis ferramentas: `insert_block`, `update_block`, `remove_block`, `move_block`, `update_page` e `replace_content`.
+2. O servidor confere login e papel e chama a OpenRouter com o modelo escolhido para aquele cliente (streaming) com seis ferramentas: `insert_block`, `update_block`, `remove_block`, `move_block`, `update_page` e `replace_content`.
 3. Cada chamada de ferramenta é validada contra o esquema dos blocos (`blocks/schema.ts`). Uma entrada inválida volta para a IA como erro e ela corrige sozinha.
 4. Cada mudança aceita é enviada ao editor na hora (a página muda enquanto a IA trabalha). No fim, a alteração inteira vira um passo de desfazer.
 5. A IA nunca publica. O resultado fica no rascunho até alguém publicar.
@@ -72,7 +72,17 @@ O esquema dos blocos é a fonte única: gera os campos do editor, a validação 
 
 O prompt de sistema traz uma direção de arte (ritmo das seções, títulos curtos, contraste, uma ideia por seção) e uma biblioteca de imagens verificadas. Ele é estável e vai com cache. A IA está instruída a não inventar fatos verificáveis sobre negócios reais e a marcar dados que faltam como provisórios.
 
-O pedido usa fallback automático do servidor (`fallbacks: "default"`) para o caso de um modelo recusar.
+### Modelo por cliente e créditos
+
+Todas as chamadas passam pela OpenRouter, então qualquer modelo dela serve. No painel, a agência abre **IA e créditos** (menu superior) e:
+
+- escolhe o **modelo de cada cliente** (ou deixa o padrão da plataforma);
+- mantém o **catálogo de modelos**: identificador da OpenRouter, nome, preço em créditos por 1 milhão de tokens (entrada e saída separados) e se está ativo;
+- **adiciona ou ajusta créditos** de cada cliente, com observação, e vê o extrato de movimentos.
+
+Cada chamada ao modelo é cobrada pelos tokens que o provedor informou (entrada e saída), arredondando para cima, com mínimo de 1 crédito. O saldo aparece no painel de IA do editor e cai a cada passo do agente. Com saldo zero a IA é bloqueada antes de chamar o modelo e, se acabar no meio de um pedido, o que já foi feito fica no rascunho. Todo uso fica registrado (modelo, tokens, créditos, quem pediu) e administradores do cliente veem o próprio extrato na aba "IA e créditos" do site. Sites novos recebem `VITRINE_FREE_CREDITS` (padrão 1000).
+
+Os preços iniciais são exemplos (1 crédito = US$ 0,001, sem margem): confira os preços atuais na OpenRouter e defina os seus acima do custo. Uma chamada interrompida pelo usuário só é cobrada se o provedor já tiver informado o uso.
 
 ## Rodar
 
@@ -80,7 +90,7 @@ Na raiz do repositório:
 
 ```sh
 pnpm install
-cp apps/vitrine/.env.example apps/vitrine/.env.local   # e preencha ANTHROPIC_API_KEY
+cp apps/vitrine/.env.example apps/vitrine/.env.local   # e preencha OPENROUTER_API_KEY
 pnpm --filter vitrine dev
 ```
 
@@ -94,14 +104,15 @@ Abra [http://localhost:3000](http://localhost:3000). O banco é criado em `apps/
 
 Sites publicados: `/sites/aurora` (lançamento de produto) e `/sites/gemini` (construtora).
 
-Sem `ANTHROPIC_API_KEY`, tudo funciona menos a IA, e o painel avisa o que falta. `VITRINE_AI_MOCK=1` liga um modo de teste que entende poucas frases e serve só para testar o fluxo sem chave.
+Sem `OPENROUTER_API_KEY`, tudo funciona menos a IA, e o painel avisa o que falta. `VITRINE_AI_MOCK=1` liga um modo de teste que entende poucas frases e serve só para testar o fluxo sem chave.
 
 ## Variáveis de ambiente
 
 | Variável                                       | Para quê                                                               |
 | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`                            | Liga a edição por IA.                                                  |
-| `VITRINE_AI_MODEL`                             | Troca o modelo (padrão `claude-opus-5-5`).                             |
+| `OPENROUTER_API_KEY`                           | Liga a edição por IA.                                                  |
+| `VITRINE_AI_MODEL`                             | Modelo padrão da plataforma (id da OpenRouter).                        |
+| `VITRINE_FREE_CREDITS`                         | Créditos de boas-vindas de cada site novo (padrão 1000).               |
 | `VITRINE_ROOT_DOMAIN`                          | Domínio raiz da plataforma. Sites ficam em `<slug>.<raiz>`.            |
 | `VITRINE_APP_HOSTS`                            | Hosts do painel, separados por vírgula (padrão `localhost,127.0.0.1`). |
 | `VITRINE_CNAME_TARGET`                         | Destino do CNAME que os clientes configuram (padrão `sites.<raiz>`).   |
@@ -118,7 +129,7 @@ pnpm --filter vitrine test
 
 - `tests/page-ops.test.ts`: as operações da IA (inserir, editar, mover, remover, reconstruir), a validação, os modelos e o catálogo.
 - `tests/design.test.ts`: os controles de personalização (props comuns, configurações da página, blocos novos, links incorporados, limpeza do CSS, estilos prontos e preenchimento de campos novos em páginas antigas).
-- `tests/agent.test.ts`: roda o agente real (SDK da Anthropic, streaming, ferramentas) contra um servidor falso da API. Confere o formato do pedido, a execução das ferramentas e a correção após um erro.
+- `tests/agent.test.ts`: roda o agente real (cliente da OpenRouter, streaming, ferramentas, cobrança de créditos) contra um servidor falso da API. Confere o formato do pedido, a cobrança por turno, a correção após um erro e o bloqueio sem créditos.
 
 ## Arquitetura
 
@@ -143,6 +154,6 @@ pnpm --filter vitrine test
 | Imagens enviadas   | Com `VITRINE_S3_BUCKET`, vão para qualquer serviço compatível com S3 (AWS S3, Cloudflare R2, MinIO). Sem ele, ficam em disco e são servidas por `/media`.                                                                                                                          |
 | Convites e senhas  | Convites e redefinição de senha por link de uso único (guardado só como hash, expira em 7 dias / 2 horas). Com `RESEND_API_KEY`, os links vão por e-mail; sem ele, o painel mostra o link para o administrador enviar.                                                             |
 | HTTPS dos domínios | Na Vercel (`VERCEL_TOKEN` + `VERCEL_PROJECT_ID`), cada domínio adicionado é ligado ao projeto e a Vercel emite o certificado. Em servidor próprio, use o `deploy/Caddyfile`: o Caddy emite certificados sob demanda e pergunta a `/api/tls/check` se o domínio pertence a um site. |
-| Edição por IA      | `ANTHROPIC_API_KEY`. Sem a chave, o resto do produto funciona e o painel avisa o que falta.                                                                                                                                                                                        |
+| Edição por IA      | `OPENROUTER_API_KEY`. Sem a chave, o resto do produto funciona e o painel avisa o que falta.                                                                                                                                                                                       |
 
 Variáveis extras: `VITRINE_APP_URL` (endereço do painel, usado nos links de convite), `VITRINE_S3_BUCKET`, `VITRINE_S3_REGION`, `VITRINE_S3_ENDPOINT`, `VITRINE_S3_PUBLIC_URL` (mais as credenciais padrão `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`), `RESEND_API_KEY`, `VITRINE_MAIL_FROM`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`.

@@ -36,6 +36,15 @@ export function insertSite(
       )
       .run(id, path, json, "Criado a partir do modelo", opts.authorId);
   }
+  const free = Number(process.env.VITRINE_FREE_CREDITS ?? 1000);
+  if (free > 0) {
+    conn.prepare("UPDATE sites SET credits = ? WHERE id = ?").run(free, id);
+    conn
+      .prepare(
+        "INSERT INTO credit_ledger (site_id, kind, amount, balance_after, note) VALUES (?, 'grant', ?, ?, 'Créditos de boas-vindas')"
+      )
+      .run(id, free, free);
+  }
   return id;
 }
 

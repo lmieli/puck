@@ -651,3 +651,12 @@
   color: var(--vx-muted);
   width: 22px;
 }
+
+.vx-ai-input-row .vx-credits {
+  font-variant-numeric: tabular-nums;
+}
+
+.vx-ai-input-row .vx-credits.is-empty {
+  color: #c62828;
+  font-weight: 600;
+}

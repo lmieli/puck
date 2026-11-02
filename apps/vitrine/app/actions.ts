@@ -11,6 +11,12 @@ import {
 } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { attachDomain, detachDomain } from "@/lib/hosting";
+import {
+  grantCredits,
+  removeModel,
+  saveModel,
+  setSiteModel,
+} from "@/lib/credits";
 import { mailConfigured } from "@/lib/mail";
 import {
   addDomain,
@@ -21,6 +27,7 @@ import {
   redeemAccessLink,
   createSite,
   deletePage,
+  getSiteBySlug,
   deleteSite,
   removeDomain,
   removeMember,
@@ -234,4 +241,69 @@ export async function destroySite(slug: string) {
   const user = await requireUser();
   await guard(() => deleteSite(user, slug));
   redirect("/app");
+}
+
+/* ------------------------- IA: modelos e créditos ------------------------- */
+
+export async function saveSiteModel(
+  slug: string,
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(() => {
+    const site = getSiteBySlug(slug);
+    if (!site) throw new HttpError(404, "Site não encontrado.");
+    setSiteModel(user, site.id, String(form.get("model") || ""));
+    return { ok: "Modelo salvo." };
+  });
+  revalidatePath("/app/admin");
+  return res;
+}
+
+export async function giveCredits(
+  slug: string,
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(() => {
+    const site = getSiteBySlug(slug);
+    if (!site) throw new HttpError(404, "Site não encontrado.");
+    const balance = grantCredits(
+      user,
+      site.id,
+      Number(String(form.get("amount") || "").replace(/\./g, "")),
+      String(form.get("note") || "")
+    );
+    return { ok: `Saldo: ${balance.toLocaleString("pt-BR")} créditos.` };
+  });
+  revalidatePath("/app/admin");
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+export async function saveAiModel(
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(() => {
+    saveModel(user, {
+      id: String(form.get("id") || ""),
+      label: String(form.get("label") || ""),
+      inPerMtok: Number(form.get("inPerMtok")),
+      outPerMtok: Number(form.get("outPerMtok")),
+      enabled: form.get("enabled") === "on",
+    });
+    return { ok: "Modelo salvo." };
+  });
+  revalidatePath("/app/admin");
+  return res;
+}
+
+export async function dropAiModel(id: string) {
+  const user = await requireUser();
+  await guard(() => removeModel(user, id));
+  revalidatePath("/app/admin");
 }

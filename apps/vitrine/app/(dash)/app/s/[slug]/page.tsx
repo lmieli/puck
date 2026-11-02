@@ -17,6 +17,8 @@ import {
   InlineForm,
   SimpleForm,
 } from "@/components/dash/forms";
+import { Ledger } from "@/components/dash/Ledger";
+import { listLedger, modelForSite, usageSummary } from "@/lib/credits";
 import { timeAgo } from "@/lib/time";
 import { hostingProvider } from "@/lib/hosting";
 import { atLeast, HttpError, requireUser } from "@/lib/auth";
@@ -43,6 +45,7 @@ const tabs = [
   ["dominios", "Domínios"],
   ["equipe", "Equipe"],
   ["contatos", "Contatos"],
+  ["creditos", "IA e créditos"],
   ["atividade", "Atividade"],
 ] as const;
 
@@ -70,6 +73,11 @@ export default async function SitePage({ params, searchParams }: Params) {
   const { site, role } = ctx;
   const isAdmin = atLeast(role, "admin");
   const liveUrl = `/sites/${site.slug}`;
+  const usage = usageSummary(site.id);
+  let aiModel = { label: "Nenhum modelo ativo" };
+  try {
+    aiModel = modelForSite(site.id);
+  } catch {}
 
   return (
     <div className="d-page">
@@ -99,16 +107,18 @@ export default async function SitePage({ params, searchParams }: Params) {
       </div>
 
       <nav className="d-tabs" aria-label="Seções do site">
-        {tabs.map(([id, label]) => (
-          <Link
-            key={id}
-            href={`?tab=${id}`}
-            className={tab === id ? "is-active" : undefined}
-            aria-current={tab === id ? "page" : undefined}
-          >
-            {label}
-          </Link>
-        ))}
+        {tabs
+          .filter(([id]) => id !== "creditos" || isAdmin)
+          .map(([id, label]) => (
+            <Link
+              key={id}
+              href={`?tab=${id}`}
+              className={tab === id ? "is-active" : undefined}
+              aria-current={tab === id ? "page" : undefined}
+            >
+              {label}
+            </Link>
+          ))}
       </nav>
 
       {tab === "paginas" && (
@@ -447,6 +457,33 @@ export default async function SitePage({ params, searchParams }: Params) {
               </div>
             );
           })()}
+        </section>
+      )}
+
+      {tab === "creditos" && isAdmin && (
+        <section className="d-card">
+          <h2>IA e créditos</h2>
+          <p className="d-muted">
+            Cada pedido ao assistente de IA gasta créditos conforme os tokens
+            usados. Para adicionar créditos, fale com a agência.
+          </p>
+          <div className="d-stats">
+            <div>
+              <span className="d-muted">Saldo</span>
+              <strong className={site.credits <= 0 ? "d-neg" : undefined}>
+                {site.credits.toLocaleString("pt-BR")}
+              </strong>
+            </div>
+            <div>
+              <span className="d-muted">Usados em 30 dias</span>
+              <strong>{usage.credits.toLocaleString("pt-BR")}</strong>
+            </div>
+            <div>
+              <span className="d-muted">Modelo</span>
+              <strong>{aiModel.label}</strong>
+            </div>
+          </div>
+          <Ledger rows={listLedger(site.id, 50)} />
         </section>
       )}
 
