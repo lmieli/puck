@@ -111,6 +111,16 @@ CREATE TABLE IF NOT EXISTS page_views (
   PRIMARY KEY (site_id, day, path, source)
 );
 
+CREATE TABLE IF NOT EXISTS page_events (
+  site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+  day TEXT NOT NULL,
+  path TEXT NOT NULL,
+  source TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (site_id, day, path, source, kind)
+);
+
 CREATE TABLE IF NOT EXISTS ai_models (
   id TEXT PRIMARY KEY,
   label TEXT NOT NULL,

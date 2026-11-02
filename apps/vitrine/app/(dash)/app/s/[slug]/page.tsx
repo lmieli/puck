@@ -21,7 +21,12 @@ import { Ledger } from "@/components/dash/Ledger";
 import { TrackingPanel } from "@/components/dash/TrackingPanel";
 import { WhatsAppPanel } from "@/components/dash/WhatsAppPanel";
 import { Visits } from "@/components/dash/Visits";
-import { getTracking, getWhatsApp, viewSummary } from "@/lib/analytics";
+import {
+  eventSummary,
+  getTracking,
+  getWhatsApp,
+  viewSummary,
+} from "@/lib/analytics";
 import { sanitizeOrigin, sourceLabel } from "@/lib/tracking";
 import { listLedger, modelForSite, usageSummary } from "@/lib/credits";
 import { timeAgo } from "@/lib/time";
@@ -484,6 +489,8 @@ export default async function SitePage({ params, searchParams }: Params) {
         <Visits
           summary={viewSummary(site.id, 30)}
           enabled={getTracking(site).views}
+          whatsapp={eventSummary(site.id, "whatsapp", 30)}
+          bubbleOn={!!getWhatsApp(site).number}
           leads30={
             listLeads(site.id).filter(
               (l) => Date.now() - Date.parse(l.created_at + "Z") < 30 * 864e5

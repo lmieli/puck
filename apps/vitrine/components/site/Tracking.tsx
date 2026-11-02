@@ -8,7 +8,7 @@ import {
   type TrackEvent,
   type Tracking as Config,
 } from "@/lib/tracking";
-import { captureOrigin } from "./attribution";
+import { captureOrigin, readOrigin } from "./attribution";
 
 type Props = {
   slug: string;
@@ -31,6 +31,27 @@ function readChoice(slug: string): Choice {
     return v === "granted" || v === "denied" ? v : null;
   } catch {
     return null;
+  }
+}
+
+/** Fire-and-forget POST to our own counter: survives the page closing or a new tab opening. */
+function beacon(body: Record<string, unknown>) {
+  const json = JSON.stringify(body);
+  try {
+    if (
+      !navigator.sendBeacon?.(
+        "/api/public/view",
+        new Blob([json], { type: "application/json" })
+      )
+    )
+      throw new Error("beacon refused");
+  } catch {
+    fetch("/api/public/view", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: json,
+      keepalive: true,
+    }).catch(() => {});
   }
 }
 
@@ -99,24 +120,20 @@ export function Tracking({
     const key = `${slug}:${path}`;
     if (tracking.views && !counted.has(key)) {
       counted.add(key);
-      const body = JSON.stringify({ site: slug, path, origin });
-      try {
-        if (
-          !navigator.sendBeacon?.(
-            "/api/public/view",
-            new Blob([body], { type: "application/json" })
-          )
-        )
-          throw new Error("beacon refused");
-      } catch {
-        fetch("/api/public/view", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body,
-          keepalive: true,
-        }).catch(() => {});
-      }
+      beacon({ site: slug, path, origin });
     }
+  }, [slug, path, tracking.views]);
+
+  // Own counter of WhatsApp clicks: same rules as visits (no cookies, no
+  // personal data), so it does not wait for the cookie choice.
+  useEffect(() => {
+    if (!tracking.views) return;
+    const onClick = (e: MouseEvent) => {
+      if (!(e.target as Element | null)?.closest?.("a.v-wa")) return;
+      beacon({ site: slug, path, kind: "whatsapp", origin: readOrigin() });
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
   }, [slug, path, tracking.views]);
 
   // Third-party code: only after consent (when required).

@@ -139,6 +139,8 @@ Aba **WhatsApp** do site (administradores). O cliente digita o número com DDD, 
 - **Número.** Aceita qualquer formato. Sem `+`, 10 ou 11 dígitos viram Brasil (`55` na frente). Fora do Brasil, comece com `+` e o código do país. O que não parece telefone é recusado, e a mensagem é codificada na URL.
 - **Celular.** Só o ícone (alvo de toque de 58 px). Se o aviso de cookies estiver aberto, o balão sobe para não ficar embaixo dele, e o botão "Cookies" vai para o lado oposto ao do balão.
 - **Rastreamento.** O clique vira `Contact` no Meta e no TikTok, `whatsapp_click` no Google e um evento personalizado no Pinterest, quando essas ferramentas estão configuradas e aceitas. Não conta como Lead do formulário.
+- **Conversão do Google Ads.** Na aba Rastreamento há um rótulo de conversão **só para cliques no WhatsApp**, separado do rótulo do formulário. O sistema recusa o mesmo rótulo nos dois campos, para um contato não contar em dobro. Sem o rótulo, o clique não é conversão.
+- **Contagem própria.** Cada clique entra na aba **Visitas** (cartão "Cliques no WhatsApp" e tabela por origem, como `instagram / social`). Segue as regras das visitas: sem cookies e sem dado pessoal, **não espera o aceite de cookies**, ignora robôs, só conta páginas publicadas e respeita a opção "Contar visitas no painel".
 
 ## Rodar
 

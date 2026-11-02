@@ -12,6 +12,7 @@ import {
   parseTracking,
   sanitizeOrigin,
   sourceLabel,
+  summarizeEvents,
   summarizeViews,
   validateTracking,
   vendorScripts,
@@ -336,6 +337,81 @@ test("the visit summary fills empty days and ranks pages and sources", () => {
     { name: "/contato", views: 1 },
   ]);
   assert.deepEqual(s.sources[0], { name: "google / cpc", views: 6 });
+});
+
+test("WhatsApp clicks have their own Google Ads conversion, apart from the form's", () => {
+  const t = tracking({
+    googleAds: "AW-123456789",
+    googleAdsLeadLabel: "AbC-dEfGhIjK",
+    googleAdsWhatsappLabel: "ZxY-wVuTsRqPoNm",
+  });
+  const conv = (e: "lead" | "whatsapp" | "cta") =>
+    eventCalls(t, e)
+      .filter(([, a]) => a[1] === "conversion")
+      .map(([, a]) => (a[2] as { send_to: string }).send_to);
+  assert.deepEqual(conv("whatsapp"), ["AW-123456789/ZxY-wVuTsRqPoNm"]);
+  assert.deepEqual(conv("lead"), ["AW-123456789/AbC-dEfGhIjK"]);
+  assert.deepEqual(conv("cta"), [], "button clicks are never conversions");
+  // Without its own label, a WhatsApp click is not a conversion.
+  assert.deepEqual(
+    eventCalls(
+      tracking({
+        googleAds: "AW-123456789",
+        googleAdsLeadLabel: "AbC-dEfGhIjK",
+      }),
+      "whatsapp"
+    ).filter(([, a]) => a[1] === "conversion"),
+    []
+  );
+});
+
+test("the WhatsApp label is validated, needs the Ads ID and must not repeat the form's", () => {
+  const t = ok({
+    googleAds: "AW-123456789",
+    googleAdsLeadLabel: "AbC-dEfGhIjK",
+    googleAdsWhatsappLabel: "ZxY-wVuTsRqPoNm",
+  });
+  assert.equal(t.googleAdsWhatsappLabel, "ZxY-wVuTsRqPoNm");
+  assert.match(
+    bad({ googleAds: "AW-123456789", googleAdsWhatsappLabel: "a b" }),
+    /WhatsApp/
+  );
+  assert.match(
+    bad({ googleAdsWhatsappLabel: "ZxY-wVuTsRqPoNm" }),
+    /junto com o ID do Google Ads/
+  );
+  assert.match(
+    bad({
+      googleAds: "AW-123456789",
+      googleAdsLeadLabel: "AbC-dEfGhIjK",
+      googleAdsWhatsappLabel: "AbC-dEfGhIjK",
+    }),
+    /em dobro/
+  );
+});
+
+test("WhatsApp clicks are summarised by source and page inside the window", () => {
+  const days = ["2026-11-01", "2026-11-02"];
+  const s = summarizeEvents(
+    [
+      { day: "2026-11-01", path: "/", source: "google / cpc", count: 3 },
+      { day: "2026-11-02", path: "/contato", source: "direto", count: 1 },
+      { day: "2026-11-02", path: "/", source: "google / cpc", count: 2 },
+      { day: "2026-10-01", path: "/velho", source: "direto", count: 50 },
+    ],
+    days
+  );
+  assert.equal(s.total, 6);
+  assert.deepEqual(s.sources, [
+    { name: "google / cpc", count: 5 },
+    { name: "direto", count: 1 },
+  ]);
+  assert.deepEqual(s.pages[0], { name: "/", count: 5 });
+  assert.deepEqual(summarizeEvents([], days), {
+    total: 0,
+    sources: [],
+    pages: [],
+  });
 });
 
 test("a click on the WhatsApp bubble becomes a Contact event on each platform", () => {

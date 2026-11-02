@@ -1,6 +1,7 @@
-import type { summarizeViews } from "@/lib/tracking";
+import type { summarizeEvents, summarizeViews } from "@/lib/tracking";
 
 type Summary = ReturnType<typeof summarizeViews>;
+type Events = ReturnType<typeof summarizeEvents>;
 
 const nf = new Intl.NumberFormat("pt-BR");
 
@@ -14,10 +15,15 @@ export function Visits({
   summary,
   enabled,
   leads30,
+  whatsapp,
+  bubbleOn,
 }: {
   summary: Summary;
   enabled: boolean;
   leads30: number;
+  /** Clicks on the WhatsApp bubble in the same window. */
+  whatsapp: Events;
+  bubbleOn: boolean;
 }) {
   const max = Math.max(1, ...summary.perDay.map((d) => d.views));
   const avg = summary.total / Math.max(1, summary.perDay.length);
@@ -46,6 +52,12 @@ export function Visits({
           <span className="d-muted">Contatos recebidos</span>
           <strong>{nf.format(leads30)}</strong>
         </div>
+        {(bubbleOn || whatsapp.total > 0) && (
+          <div>
+            <span className="d-muted">Cliques no WhatsApp</span>
+            <strong>{nf.format(whatsapp.total)}</strong>
+          </div>
+        )}
       </div>
 
       <div
@@ -115,6 +127,26 @@ export function Visits({
               </tbody>
             </table>
           </div>
+          {whatsapp.total > 0 && (
+            <div className="d-table-wrap">
+              <table className="d-table">
+                <thead>
+                  <tr>
+                    <th>Cliques no WhatsApp, por origem</th>
+                    <th className="d-num">Cliques</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {whatsapp.sources.map((w) => (
+                    <tr key={w.name}>
+                      <td>{w.name}</td>
+                      <td className="d-num">{nf.format(w.count)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </section>

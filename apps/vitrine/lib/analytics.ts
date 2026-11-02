@@ -3,10 +3,14 @@ import { HttpError, type User } from "./auth";
 import { db } from "./db";
 import { getPublished, log, normalizePath, siteFor, type Site } from "./repo";
 import {
+  EVENT_KINDS,
   parseTracking,
   sanitizeOrigin,
   sourceLabel,
+  summarizeEvents,
   summarizeViews,
+  type EventKind,
+  type EventRow,
   validateTracking,
   type Tracking,
   type ViewRow,
@@ -130,4 +134,48 @@ export function viewSummary(siteId: string, days = 30) {
     )
     .all(siteId, list[0]) as ViewRow[];
   return summarizeViews(rows, list);
+}
+
+/**
+ * Count one event (a WhatsApp click) with the same rules as a visit: no
+ * cookies, no IP, no personal data, only published pages, and only when the
+ * site keeps its own counters on.
+ */
+export function recordEvent(
+  slug: string,
+  path: string,
+  kind: string,
+  originInput: unknown,
+  ownHosts: string[] = []
+) {
+  if (!(EVENT_KINDS as readonly string[]).includes(kind)) return false;
+  const site = db()
+    .prepare("SELECT id, tracking FROM sites WHERE slug = ?")
+    .get(slug) as Pick<Site, "id" | "tracking"> | undefined;
+  if (!site || !parseTracking(site.tracking).views) return false;
+  const p = normalizePath(path);
+  if (!getPublished(site.id, p)) return false;
+  const source = sourceLabel(sanitizeOrigin(originInput), ownHosts).slice(
+    0,
+    60
+  );
+  db()
+    .prepare(
+      `INSERT INTO page_events (site_id, day, path, source, kind, count) VALUES (?, ?, ?, ?, ?, 1)
+       ON CONFLICT(site_id, day, path, source, kind) DO UPDATE SET count = count + 1`
+    )
+    .run(site.id, today(), p, source, kind);
+  return true;
+}
+
+export function eventSummary(siteId: string, kind: EventKind, days = 30) {
+  const list: string[] = [];
+  for (let i = days - 1; i >= 0; i--)
+    list.push(new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10));
+  const rows = db()
+    .prepare(
+      "SELECT day, path, source, count FROM page_events WHERE site_id = ? AND kind = ? AND day >= ?"
+    )
+    .all(siteId, kind, list[0]) as EventRow[];
+  return summarizeEvents(rows, list);
 }

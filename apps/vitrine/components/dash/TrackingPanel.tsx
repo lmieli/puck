@@ -28,6 +28,11 @@ const FIELDS: {
     help: "Na conversão criada no Google Ads, é o trecho depois da barra em AW-123456789/rótulo. Faz o envio do formulário contar como conversão.",
   },
   {
+    name: "googleAdsWhatsappLabel",
+    label: "Rótulo da conversão de cliques no WhatsApp (opcional)",
+    help: "Crie no Google Ads uma segunda conversão, só para cliques no WhatsApp, e cole o rótulo dela. Precisa ser diferente do rótulo do formulário, senão cada contato conta em dobro. Só vale se o site tiver o balão de WhatsApp.",
+  },
+  {
     name: "tiktok",
     label: "TikTok Pixel",
     help: "TikTok Ads → Eventos → Gerenciar → ID do pixel.",

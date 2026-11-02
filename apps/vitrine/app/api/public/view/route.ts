@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonBody } from "@/lib/api";
-import { recordView } from "@/lib/analytics";
+import { recordEvent, recordView } from "@/lib/analytics";
 import { isBot } from "@/lib/tracking";
 
 // Visit counter beacon. Answers 204 even when nothing was counted: the page
@@ -24,12 +24,22 @@ export async function POST(req: Request) {
       .split(":")[0]
       .replace(/^www\./, "")
       .toLowerCase();
-    recordView(
-      String(body.site || ""),
-      String(body.path || "/"),
-      body.origin,
-      host ? [host] : []
-    );
+    const hosts = host ? [host] : [];
+    if (body.kind)
+      recordEvent(
+        String(body.site || ""),
+        String(body.path || "/"),
+        String(body.kind),
+        body.origin,
+        hosts
+      );
+    else
+      recordView(
+        String(body.site || ""),
+        String(body.path || "/"),
+        body.origin,
+        hosts
+      );
   } catch {
     // never fail loudly on a beacon
   }

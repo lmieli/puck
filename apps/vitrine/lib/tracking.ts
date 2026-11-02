@@ -9,6 +9,8 @@ export type Tracking = {
   ga4: string;
   googleAds: string;
   googleAdsLeadLabel: string;
+  /** Own conversion for WhatsApp clicks, separate from the form's so neither counts twice. */
+  googleAdsWhatsappLabel: string;
   tiktok: string;
   pinterest: string;
   googleVerification: string;
@@ -24,6 +26,7 @@ export const EMPTY_TRACKING: Tracking = {
   ga4: "",
   googleAds: "",
   googleAdsLeadLabel: "",
+  googleAdsWhatsappLabel: "",
   tiktok: "",
   pinterest: "",
   googleVerification: "",
@@ -63,6 +66,11 @@ export const ID_RULES: Record<
   googleAdsLeadLabel: {
     label: "Rótulo da conversão do Google Ads",
     example: "AbC-dEfGhIjKlMnOp",
+    re: /^[A-Za-z0-9_-]{6,40}$/,
+  },
+  googleAdsWhatsappLabel: {
+    label: "Rótulo da conversão de cliques no WhatsApp",
+    example: "ZxY-wVuTsRqPoNm",
     re: /^[A-Za-z0-9_-]{6,40}$/,
   },
   tiktok: {
@@ -105,10 +113,21 @@ export function validateTracking(
       };
     value[field] = v;
   }
-  if (value.googleAdsLeadLabel && !value.googleAds)
+  if (
+    (value.googleAdsLeadLabel || value.googleAdsWhatsappLabel) &&
+    !value.googleAds
+  )
     return {
       error:
-        "O rótulo da conversão do Google Ads só funciona junto com o ID do Google Ads.",
+        "Os rótulos de conversão do Google Ads só funcionam junto com o ID do Google Ads.",
+    };
+  if (
+    value.googleAdsLeadLabel &&
+    value.googleAdsLeadLabel === value.googleAdsWhatsappLabel
+  )
+    return {
+      error:
+        "Use um rótulo diferente para o WhatsApp: com o mesmo rótulo do formulário, cada contato contaria em dobro.",
     };
   value.consent = input.consent === "on" || input.consent === true;
   value.views = input.views === "on" || input.views === true;
@@ -255,14 +274,16 @@ export function eventCalls(
         ? ["event", "whatsapp_click"]
         : ["event", "cta_click", { label: l }],
     ]);
-    if (event === "lead" && t.googleAds && t.googleAdsLeadLabel)
+    const label =
+      event === "lead"
+        ? t.googleAdsLeadLabel
+        : event === "whatsapp"
+        ? t.googleAdsWhatsappLabel
+        : "";
+    if (t.googleAds && label)
       calls.push([
         "gtag",
-        [
-          "event",
-          "conversion",
-          { send_to: `${t.googleAds}/${t.googleAdsLeadLabel}` },
-        ],
+        ["event", "conversion", { send_to: `${t.googleAds}/${label}` }],
       ]);
   }
   if (t.tiktok)
@@ -383,4 +404,38 @@ export function summarizeViews(rows: ViewRow[], days: string[]) {
     pages: top(pages, 8),
     sources: top(sources, 8),
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Own event counters (WhatsApp clicks)                                  */
+/* ------------------------------------------------------------------ */
+
+export const EVENT_KINDS = ["whatsapp"] as const;
+export type EventKind = (typeof EVENT_KINDS)[number];
+
+export type EventRow = {
+  day: string;
+  path: string;
+  source: string;
+  count: number;
+};
+
+/** Total, top sources and top pages of one kind of event inside the day window. */
+export function summarizeEvents(rows: EventRow[], days: string[]) {
+  const inWindow = new Set(days);
+  const sources = new Map<string, number>();
+  const pages = new Map<string, number>();
+  let total = 0;
+  for (const r of rows) {
+    if (!inWindow.has(r.day)) continue;
+    total += r.count;
+    sources.set(r.source, (sources.get(r.source) ?? 0) + r.count);
+    pages.set(r.path, (pages.get(r.path) ?? 0) + r.count);
+  }
+  const top = (m: Map<string, number>, n: number) =>
+    [...m.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, n)
+      .map(([name, count]) => ({ name, count }));
+  return { total, sources: top(sources, 8), pages: top(pages, 8) };
 }
