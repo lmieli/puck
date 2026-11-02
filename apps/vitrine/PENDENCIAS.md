@@ -23,3 +23,13 @@ Itens combinados e ainda não feitos. Marque com `[x]` e mova para o README quan
 ## IA
 
 - [ ] **Skill por cliente.** Escolher as skills conforme o site editado (por exemplo `cliente-gemini`), em vez de só `direcao-de-arte` e `sobre-a-agencia` para todos.
+
+## SEO e IAs
+
+- [ ] **Conferir no Google Search Console e no Bing Webmaster** com um domínio real: enviar o `sitemap.xml`, inspecionar uma URL e validar os dados estruturados no Teste de Resultados Enriquecidos. Os arquivos foram testados por requisições, não pelos buscadores.
+- [ ] **Confirmar os nomes dos rastreadores de IA** na documentação atual de cada empresa (OpenAI, Anthropic, Perplexity, Google, Apple, Meta). Esses nomes mudam; a lista fica em `lib/seo.ts`.
+- [ ] **IndexNow** (Bing e outros) para avisar a publicação na hora, em vez de esperar o rastreio.
+- [ ] **Redirecionamentos** quando o endereço de uma página muda, para não perder o link antigo no Google.
+- [ ] **Imagens**: gerar tamanhos responsivos (`srcset`), formatos modernos e `loading="lazy"` consistente; medir com Lighthouse. O bloco 3D (three.js) deve carregar só quando aparece.
+- [ ] **Telemetria de rastreadores de IA**: contar quantas vezes cada agente leu o site, para mostrar ao cliente. Hoje eles não executam o contador de visitas.
+- [ ] **Idiomas**: `hreflang` e sites em mais de um idioma (hoje tudo é `pt-BR`).

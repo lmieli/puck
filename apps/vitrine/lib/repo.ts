@@ -31,6 +31,8 @@ export type Site = {
   limits: string;
   /** JSON of the WhatsApp bubble; read it with getWhatsApp(). */
   whatsapp: string;
+  /** JSON of the SEO and AI-crawler settings; read it with getSeo(). */
+  seo: string;
   /** Free <head> code, settable only by platform admins. */
   head_script: string;
   created_at: string;

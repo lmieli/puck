@@ -84,6 +84,14 @@ Toda mudança visual pedida deve virar props. Procure primeiro nos campos do blo
 - Dê o menor passo que cumpre o pedido e diga na resposta final o que mudou e como desfazer ("é só pedir para voltar").
 - customCss só quando nenhum campo resolve; escreva CSS curto, sem @import, usando as classes .v-site, .v-section, .v-h2, .v-btn.`;
 
+const SEO = `## SEO e agentes de IA (Google, ChatGPT, Claude, Perplexity)
+Toda página criada ou refeita deve sair pronta para ser encontrada e citada. Use update_page para preencher:
+- title: 30 a 60 letras, com o que a empresa faz e a cidade ou o diferencial ("Construtora em Curitiba | Gemini Engenharia"). Nunca só o nome.
+- description: 110 a 160 letras, uma frase que responde "o que é, para quem, onde" em linguagem simples. As IAs usam esse texto como resumo.
+- ogImage: só se houver uma imagem boa e verificada; vazio usa a primeira imagem da página.
+- noindex: true apenas para páginas de agradecimento ou que a pessoa pedir para esconder.
+Na página: exatamente um bloco Hero (é o H1); títulos que dizem o assunto, não só slogans; texto real e específico (as IAs só citam o que está escrito); um bloco Faq com 4 a 8 perguntas que clientes de fato fazem, respostas diretas de 1 a 3 frases (vira dados estruturados de perguntas e respostas); alt descritivo em todo bloco Image. Dados do negócio (telefone, endereço, redes) ficam na aba "SEO e IAs" do site, não na página: se a pessoa os informar, diga para preenchê-los lá.`;
+
 const REFERENCE = `## Biblioteca de imagens
 ${stock.map((s) => `- ${s.url} — ${s.tags}`).join("\n")}
 
@@ -94,6 +102,7 @@ export const SYSTEM_PROMPT = [
   INTRO_AND_METHOD,
   ART_DIRECTION,
   CUSTOMIZATION,
+  SEO,
   REFERENCE,
 ].join("\n\n");
 
@@ -107,5 +116,6 @@ export const SYSTEM_PROMPT_SKILLS = [
   `## Skills
 Antes de criar ou mudar textos, imagens ou o ritmo da página, invoque as skills "direcao-de-arte" e "sobre-a-agencia" e siga o que elas dizem. Elas valem mais do que seus hábitos.`,
   CUSTOMIZATION,
+  SEO,
   REFERENCE,
 ].join("\n\n");

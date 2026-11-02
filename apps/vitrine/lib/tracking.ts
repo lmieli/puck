@@ -362,7 +362,7 @@ export function sourceLabel(o: Origin, ownHosts: string[] = []): string {
 }
 
 const BOT =
-  /bot|crawl|spider|slurp|headless|lighthouse|preview|monitor|curl|wget|python-requests|facebookexternalhit/i;
+  /bot|crawl|spider|slurp|headless|lighthouse|preview|monitor|curl|wget|python-requests|facebookexternalhit|chatgpt-user|claude-user|perplexity-user/i;
 
 /** Crawlers and monitors would inflate the visit count. */
 export function isBot(userAgent: string | null | undefined) {

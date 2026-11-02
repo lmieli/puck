@@ -7,12 +7,17 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Params) {
   const { host, path } = await params;
-  return publicMetadata(siteForHost(decodeURIComponent(host)), path);
+  const h = decodeURIComponent(host).toLowerCase();
+  return publicMetadata(siteForHost(h), path, h);
 }
 
 export default async function Page({ params }: Params) {
   const { host, path } = await params;
   return (
-    <PublicPage site={siteForHost(decodeURIComponent(host))} parts={path} />
+    <PublicPage
+      site={siteForHost(decodeURIComponent(host))}
+      parts={path}
+      host={decodeURIComponent(host).toLowerCase()}
+    />
   );
 }

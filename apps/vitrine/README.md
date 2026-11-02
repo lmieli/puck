@@ -63,6 +63,23 @@ Blocos livres para montar qualquer tipo de site: **Texto**, **Imagem**, **Cartõ
 
 Por segurança, não existe bloco de HTML ou script livre: os sites rodam no mesmo domínio do painel, e um script de um cliente poderia atacar os outros. O CSS próprio é limpo antes de ir ao ar.
 
+## SEO e agentes de IA
+
+Cada site sai pronto para ser encontrado no Google e citado por ChatGPT, Claude e Perplexity, sem trabalho do cliente:
+
+- **`robots.txt`** com uma regra explícita para cada rastreador de IA. Dois grupos, ligados e desligados na aba **SEO e IAs**: agentes que buscam e respondem (`OAI-SearchBot`, `ChatGPT-User`, `Claude-SearchBot`, `Claude-User`, `PerplexityBot`, `Perplexity-User`) e coleta para treino (`GPTBot`, `ClaudeBot`, `anthropic-ai`, `Google-Extended`, `Applebot-Extended`, `CCBot`, `Meta-ExternalAgent`, `Bytespider`, `Amazonbot`, `cohere-ai`). Bloquear o treino não tira o site das respostas de IA.
+- **`sitemap.xml`** com as páginas publicadas e a data da última publicação.
+- **`llms.txt` e `llms-full.txt`**: resumo e lista de páginas, e todo o texto do site em um arquivo, no formato que os agentes de IA leem.
+- **Markdown de cada página**: acrescente `.md` ao endereço (`/sobre.md`, `/index.md`) ou peça com `Accept: text/markdown`. O agente lê o texto limpo, com muito menos tokens que o HTML. A cópia aponta para a página HTML como canônica.
+- **HTML**: servido pronto pelo servidor, com `title`, descrição, URL canônica, `robots`, Open Graph, Twitter card e a imagem de compartilhamento (a escolhida ou a primeira da página).
+- **Dados estruturados (JSON-LD)**: empresa ou negócio local (nome, telefone, endereço, perfis, região), site, página, trilha de navegação e perguntas e respostas a partir do bloco Perguntas frequentes.
+- **Um só endereço indexado**: em um site com domínio próprio, só o domínio próprio entra no Google e nas IAs; o endereço provisório e o `/sites/<slug>` do painel ficam com `noindex` e `Disallow`. Tudo é por endereço, então cada domínio de cliente tem os próprios arquivos.
+- **Por página**: a opção "Esconder do Google e das IAs" tira a página do mapa, do `llms.txt`, do Markdown e dos buscadores.
+- **Revisão**: a aba mostra uma nota de 0 a 100 por página publicada (título, descrição, H1, imagem de compartilhamento, texto alternativo, volume de texto) e diz o que mudar.
+- **IA do editor**: o prompt manda preencher título, descrição, Faq e `alt` em toda página que ela cria.
+
+O site inteiro pode ser tirado do ar para buscadores e IAs desligando "Aparecer no Google" (útil enquanto está em construção).
+
 ## Como a IA funciona
 
 1. O painel envia o pedido, a página atual (JSON), o bloco selecionado e as últimas mensagens para `/api/ai`.
@@ -221,6 +238,7 @@ pnpm --filter vitrine test
 
 - `tests/page-ops.test.ts`: as operações da IA (inserir, editar, mover, remover, reconstruir), a validação, os modelos e o catálogo.
 - `tests/design.test.ts`: os controles de personalização (props comuns, configurações da página, blocos novos, links incorporados, limpeza do CSS, estilos prontos e preenchimento de campos novos em páginas antigas).
+- `tests/seo.test.ts`: robots por rastreador de IA, mapa do site, Markdown, llms.txt, JSON-LD, validação e a revisão por página.
 - `tests/agent.test.ts`: roda o agente real (cliente da OpenRouter, streaming, ferramentas, cobrança de créditos) contra um servidor falso da API. Confere o formato do pedido, a cobrança por turno, a correção após um erro e o bloqueio sem créditos.
 
 ## Arquitetura

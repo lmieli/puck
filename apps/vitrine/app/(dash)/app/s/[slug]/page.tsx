@@ -18,6 +18,9 @@ import {
   SimpleForm,
 } from "@/components/dash/forms";
 import { Ledger } from "@/components/dash/Ledger";
+import { SeoPanel } from "@/components/dash/SeoPanel";
+import { auditPage, rootOf } from "@/lib/seo";
+import { getSeo, publishedPages, siteOrigin } from "@/lib/seo-server";
 import { CadastrosPanel } from "@/components/dash/CadastrosPanel";
 import { CLASSIC_PARAM, Leads } from "@/components/dash/Leads";
 import { TrackingPanel } from "@/components/dash/TrackingPanel";
@@ -64,6 +67,7 @@ const tabs = [
   ["visitas", "Visitas"],
   ["rastreamento", "Rastreamento"],
   ["whatsapp", "WhatsApp"],
+  ["seo", "SEO e IAs"],
   ["creditos", "IA e créditos"],
   ["atividade", "Atividade"],
 ] as const;
@@ -74,6 +78,7 @@ const ADMIN_TABS = new Set([
   "creditos",
   "rastreamento",
   "whatsapp",
+  "seo",
 ]);
 
 const statusLabel: Record<string, string> = {
@@ -494,6 +499,22 @@ export default async function SitePage({ params, searchParams }: Params) {
           tracking={getTracking(site)}
           headScript={site.head_script}
           isPlatformAdmin={!!user.is_super_admin}
+        />
+      )}
+
+      {tab === "seo" && isAdmin && (
+        <SeoPanel
+          slug={site.slug}
+          seo={getSeo(site)}
+          origin={siteOrigin(site)}
+          isPlatformAdmin={!!user.is_super_admin}
+          audits={publishedPages(site.id)
+            .sort((a, b) => a.path.localeCompare(b.path))
+            .map((p) => ({
+              path: p.path,
+              title: rootOf(p.data).title ?? "",
+              audit: auditPage(p.data, { name: site.name }),
+            }))}
         />
       )}
 

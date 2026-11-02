@@ -1481,7 +1481,16 @@ export const blockNames = Object.keys(blocks) as BlockName[];
 export const rootFields = {
   title: { type: "text", label: "Título da página (Google e aba)" },
   description: { type: "textarea", label: "Descrição para o Google" },
-  ogImage: { type: "image", label: "Imagem ao compartilhar o link" },
+  ogImage: {
+    type: "image",
+    label: "Imagem ao compartilhar o link",
+    help: "aparece no WhatsApp, LinkedIn e redes; 1200 por 630 px é o ideal. Vazio usa a primeira imagem da página",
+  },
+  noindex: {
+    type: "boolean",
+    label: "Esconder do Google e das IAs",
+    help: "ligado, a página fica fora do Google, do mapa do site e dos agentes de IA (ChatGPT, Claude, Perplexity). Use em páginas de agradecimento ou rascunhos publicados",
+  },
   theme: {
     type: "select",
     label: "Tema",
@@ -1601,6 +1610,7 @@ export const rootDefaults = {
   title: "",
   description: "",
   ogImage: "",
+  noindex: false,
   theme: "light",
   accent: "#0071e3",
   bgColor: "",
@@ -1627,8 +1637,8 @@ export const rootGroups: {
   open?: boolean;
 }[] = [
   {
-    label: "Página e Google",
-    keys: ["title", "description", "ogImage"],
+    label: "Página, Google e IAs",
+    keys: ["title", "description", "ogImage", "noindex"],
     open: true,
   },
   {

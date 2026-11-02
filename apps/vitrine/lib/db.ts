@@ -19,6 +19,8 @@ function migrate(conn: Database.Database) {
   const cols = (
     conn.prepare("PRAGMA table_info(sites)").all() as { name: string }[]
   ).map((c) => c.name);
+  if (!cols.includes("seo"))
+    conn.exec("ALTER TABLE sites ADD COLUMN seo TEXT NOT NULL DEFAULT '{}'");
   if (!cols.includes("ai_model"))
     conn.exec("ALTER TABLE sites ADD COLUMN ai_model TEXT");
   if (!cols.includes("tracking"))

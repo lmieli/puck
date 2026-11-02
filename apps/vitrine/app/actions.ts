@@ -10,6 +10,7 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { saveHeadScript, saveTracking, saveWhatsApp } from "@/lib/analytics";
+import { saveSeo } from "@/lib/seo-server";
 import {
   addEmailRecipient,
   addWebhook,
@@ -433,6 +434,27 @@ export async function saveLimitsAction(
   const res = await guard(() => {
     saveLimits(user, slug, Object.fromEntries(form));
     return { ok: "Limites salvos." };
+  });
+  revalidatePath(`/app/s/${slug}`);
+  return res;
+}
+
+export async function saveSeoAction(
+  slug: string,
+  _: FormState,
+  form: FormData
+): Promise<FormState> {
+  const user = await requireUser();
+  const res = await guard(() => {
+    const raw = Object.fromEntries(form);
+    // Unchecked boxes are absent from the form: make them explicit.
+    saveSeo(user, slug, {
+      ...raw,
+      indexable: form.has("indexable"),
+      aiSearch: form.has("aiSearch"),
+      aiTraining: form.has("aiTraining"),
+    });
+    return { ok: "SEO salvo. Vale para as próximas visitas e rastreadores." };
   });
   revalidatePath(`/app/s/${slug}`);
   return res;
