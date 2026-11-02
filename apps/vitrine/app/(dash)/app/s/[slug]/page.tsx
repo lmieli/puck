@@ -509,7 +509,14 @@ export default async function SitePage({ params, searchParams }: Params) {
       )}
 
       {tab === "whatsapp" && isAdmin && (
-        <WhatsAppPanel slug={site.slug} whatsapp={getWhatsApp(site)} />
+        <WhatsAppPanel
+          slug={site.slug}
+          whatsapp={getWhatsApp(site)}
+          pages={listPages(site.id).map((p) => ({
+            path: p.path,
+            title: p.title,
+          }))}
+        />
       )}
 
       {tab === "creditos" && isAdmin && (

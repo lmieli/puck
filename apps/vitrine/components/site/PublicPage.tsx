@@ -6,6 +6,7 @@ import { getTracking, getWhatsApp } from "@/lib/analytics";
 import { getPublished, normalizePath, type Site } from "@/lib/repo";
 import { SiteRender } from "./SiteRender";
 import { Tracking } from "./Tracking";
+import { resolveBubble } from "@/lib/whatsapp";
 import { WhatsAppBubble } from "./WhatsAppBubble";
 
 export function publicMetadata(
@@ -47,7 +48,9 @@ export function PublicPage({
   const path = normalizePath((parts ?? []).join("/"));
   const data = getPublished(site.id, path);
   if (!data) notFound();
-  const whatsapp = getWhatsApp(site);
+  // Per page and per moment (this route renders on every request): the page
+  // rule and the service hours decide whether the bubble shows, and with what text.
+  const whatsapp = resolveBubble(getWhatsApp(site), path, new Date());
   return (
     <>
       <SiteRender
@@ -60,9 +63,9 @@ export function PublicPage({
         path={path}
         tracking={getTracking(site)}
         headScript={site.head_script}
-        bubbleSide={whatsapp.number ? whatsapp.position : null}
+        bubbleSide={whatsapp ? whatsapp.position : null}
       />
-      <WhatsAppBubble whatsapp={whatsapp} />
+      {whatsapp && <WhatsAppBubble whatsapp={whatsapp} />}
     </>
   );
 }

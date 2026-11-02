@@ -344,7 +344,11 @@ export async function saveWhatsAppAction(
 ): Promise<FormState> {
   const user = await requireUser();
   const res = await guard(() => {
-    saveWhatsApp(user, slug, Object.fromEntries(form));
+    saveWhatsApp(user, slug, {
+      ...Object.fromEntries(form),
+      // Repeated checkboxes: fromEntries would keep only the last one.
+      paths: form.getAll("paths").map(String),
+    });
     return { ok: "WhatsApp salvo. O balão aparece nas próximas visitas." };
   });
   revalidatePath(`/app/s/${slug}`);

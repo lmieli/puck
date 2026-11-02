@@ -15,6 +15,7 @@ import { db, tx } from "./db";
 import { appUrl, sendMail } from "./mail";
 import { insertSite } from "./seed";
 import { buildTemplate, type TemplateId } from "./templates";
+import { normalizePath } from "./paths";
 import { sanitizeOrigin } from "./tracking";
 
 export type Site = {
@@ -156,13 +157,7 @@ export function deleteSite(user: User, slug: string) {
 
 /* ------------------------------- pages ------------------------------- */
 
-export function normalizePath(p: string) {
-  const clean = ("/" + (p || "").trim())
-    .replace(/\/+/g, "/")
-    .replace(/[^a-zA-Z0-9/_-]/g, "")
-    .toLowerCase();
-  return clean.length > 1 ? clean.replace(/\/$/, "") : "/";
-}
+export { normalizePath };
 
 export function listPages(siteId: string) {
   return db()
