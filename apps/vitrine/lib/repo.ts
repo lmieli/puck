@@ -1,7 +1,8 @@
 import "server-only";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { resolveCname, resolve4, resolveTxt } from "node:dns/promises";
-import type { PageData } from "../ai/page-ops.ts";
+import { validateRoot, type PageData } from "../ai/page-ops.ts";
+import { styleKeys } from "../blocks/design.ts";
 import {
   atLeast,
   hashPassword,
@@ -318,6 +319,43 @@ export function restoreVersion(user: User, slug: string, versionId: number) {
     "restore"
   );
   return { path: v.path, number };
+}
+
+/** Copy the look (theme, colours, fonts, shape…) of one page onto every other page's draft. */
+export function applyStyleToAll(
+  user: User,
+  slug: string,
+  props: Record<string, unknown>,
+  exceptPath: string
+) {
+  const { site } = siteFor(user, slug, "admin");
+  const picked: Record<string, unknown> = {};
+  for (const k of styleKeys) if (k in props) picked[k] = props[k];
+  const clean = validateRoot(picked);
+  const rows = db()
+    .prepare("SELECT path, draft FROM pages WHERE site_id = ? AND path != ?")
+    .all(site.id, exceptPath) as {
+    path: string;
+    draft: string;
+  }[];
+  tx(() => {
+    for (const r of rows) {
+      const data = JSON.parse(r.draft) as PageData;
+      data.root = { props: { ...(data.root?.props ?? {}), ...clean } };
+      db()
+        .prepare(
+          "UPDATE pages SET draft = ?, updated_at = datetime('now'), updated_by = ? WHERE site_id = ? AND path = ?"
+        )
+        .run(JSON.stringify(data), user.id, site.id, r.path);
+    }
+  });
+  log(
+    site.id,
+    user.id,
+    "page",
+    `Aplicou o estilo de ${exceptPath} a ${rows.length} página(s)`
+  );
+  return rows.length;
 }
 
 export function createPage(

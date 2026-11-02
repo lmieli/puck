@@ -2,7 +2,15 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { useActiveStep, useReveal, useScrollProgress } from "../motion";
-import { anchor, Buttons, Head, Media, Section, type PropsOf } from "../ui";
+import {
+  anchor,
+  Buttons,
+  Head,
+  Media,
+  objectPositions,
+  Section,
+  type PropsOf,
+} from "../ui";
 
 /* ------------------------------------------------------------------ */
 /* Hero                                                                 */
@@ -12,14 +20,18 @@ function HeroMedia({
   image,
   video,
   title,
+  position,
 }: {
   image: string;
   video: string;
   title: string;
+  position?: string;
 }) {
+  const style = { objectPosition: objectPositions[position ?? "center"] };
   if (video) {
     return (
       <video
+        style={style}
         className="v-hero-img"
         src={video}
         poster={image || undefined}
@@ -31,10 +43,15 @@ function HeroMedia({
       />
     );
   }
-  return <Media src={image} alt={title} className="v-hero-img" eager />;
+  return (
+    <Media src={image} alt={title} className="v-hero-img" style={style} eager />
+  );
 }
 
+const headScales = { sm: 0.78, md: 1, lg: 1.22, xl: 1.5 } as const;
+
 export function Hero(p: PropsOf<"Hero">) {
+  const headScale = headScales[p.titleSize as keyof typeof headScales] ?? 1;
   const sticky = useScrollProgress<HTMLElement>("sticky");
   const reveal = useReveal<HTMLElement>();
 
@@ -67,6 +84,8 @@ export function Hero(p: PropsOf<"Hero">) {
       <section
         ref={sticky}
         className={`v-hero v-hero-cinematic v-tone-${p.tone}`}
+        data-size={p.mediaSize}
+        style={{ ["--ht" as string]: headScale }}
       >
         <div className="v-hero-sticky">
           <div className="v-hero-copy">
@@ -78,7 +97,12 @@ export function Hero(p: PropsOf<"Hero">) {
             <Buttons items={p.buttons} center />
           </div>
           <div className="v-hero-frame">
-            <HeroMedia image={p.image} video={p.video} title={p.title} />
+            <HeroMedia
+              image={p.image}
+              video={p.video}
+              title={p.title}
+              position={p.imagePosition}
+            />
           </div>
         </div>
       </section>
@@ -91,6 +115,7 @@ export function Hero(p: PropsOf<"Hero">) {
         <div
           ref={reveal as React.RefObject<HTMLDivElement>}
           className="v-wrap v-hero-split-grid"
+          style={{ ["--ht" as string]: headScale }}
         >
           <div className="v-hero-copy-left" data-reveal>
             {p.eyebrow && (
@@ -101,7 +126,12 @@ export function Hero(p: PropsOf<"Hero">) {
             <Buttons items={p.buttons} />
           </div>
           <div className="v-hero-split-media" data-reveal>
-            <HeroMedia image={p.image} video={p.video} title={p.title} />
+            <HeroMedia
+              image={p.image}
+              video={p.video}
+              title={p.title}
+              position={p.imagePosition}
+            />
           </div>
         </div>
       </Section>
@@ -114,6 +144,7 @@ export function Hero(p: PropsOf<"Hero">) {
         ref={reveal as React.RefObject<HTMLDivElement>}
         className="v-wrap v-narrow"
         data-reveal
+        style={{ ["--ht" as string]: headScale }}
       >
         {p.eyebrow && <p className="v-eyebrow v-accent-text">{p.eyebrow}</p>}
         <h1 className="v-display">{p.title}</h1>
@@ -199,7 +230,14 @@ export function Parallax(p: PropsOf<"Parallax">) {
       }
     >
       <div className="v-parallax-layer">
-        <Media src={p.image} alt="" className="v-parallax-img" />
+        <Media
+          src={p.image}
+          alt=""
+          className="v-parallax-img"
+          style={{
+            objectPosition: objectPositions[p.imagePosition ?? "center"],
+          }}
+        />
       </div>
       <div className="v-parallax-shade" />
       <div className="v-parallax-copy v-wrap">

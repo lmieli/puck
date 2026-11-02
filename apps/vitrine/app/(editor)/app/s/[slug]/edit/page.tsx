@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { aiConfigured } from "@/ai/agent";
 import { Editor } from "@/components/editor/Editor";
 import { HttpError, requireUser } from "@/lib/auth";
+import { fillDefaults } from "@/blocks/schema";
 import { getPage, listPages, normalizePath, siteFor } from "@/lib/repo";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ export default async function EditPage({ params, searchParams }: Params) {
       path={path}
       pages={pages}
       role={role}
-      data={JSON.parse(page.draft) as Data}
+      data={fillDefaults(JSON.parse(page.draft)) as Data}
       aiEnabled={aiConfigured()}
       initialPrompt={sp.brief}
       liveUrl={`/sites/${site.slug}${path === "/" ? "" : path}`}

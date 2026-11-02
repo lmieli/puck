@@ -20,9 +20,11 @@ export function Nav(p: PropsOf<"Nav">) {
   return (
     <nav
       ref={ref}
-      className={`v-nav ${scrolled ? "is-scrolled" : ""} ${
-        open ? "is-open" : ""
-      }`}
+      className={`v-nav v-nav-${p.navStyle ?? "blur"} v-nav-${
+        p.navAlign ?? "right"
+      } ${p.sticky === false ? "is-static" : ""} ${
+        scrolled ? "is-scrolled" : ""
+      } ${open ? "is-open" : ""}`}
       aria-label="Principal"
     >
       <div className="v-nav-inner">

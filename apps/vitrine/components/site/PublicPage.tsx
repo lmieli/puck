@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { Data } from "@puckeditor/core";
+import { fillDefaults } from "@/blocks/schema";
 import { getPublished, normalizePath, type Site } from "@/lib/repo";
 import { SiteRender } from "./SiteRender";
 

@@ -7,6 +7,7 @@ import {
   blocks,
   blockNames,
   defaultsFor,
+  fieldsFor,
   rootDefaults,
   rootFields,
   type BlockName,
@@ -38,7 +39,12 @@ function zodFor(field: FieldDef): z.ZodTypeAny {
     case "boolean":
       return z.boolean();
     case "color":
-      return z.string().regex(HEX, "cor deve estar no formato #rrggbb");
+      return field.optional
+        ? z.union([
+            z.literal(""),
+            z.string().regex(HEX, "cor deve estar no formato #rrggbb ou vazia"),
+          ])
+        : z.string().regex(HEX, "cor deve estar no formato #rrggbb");
     case "select":
       return z.enum(field.options.map((o) => o.value) as [string, ...string[]]);
     case "list": {
@@ -56,9 +62,7 @@ export function propsSchema(type: BlockName) {
   let s = schemaCache.get(type);
   if (!s) {
     const shape: Record<string, z.ZodTypeAny> = {};
-    for (const [k, f] of Object.entries(
-      blocks[type].fields as Record<string, FieldDef>
-    )) {
+    for (const [k, f] of Object.entries(fieldsFor(type))) {
       shape[k] = zodFor(f);
     }
     s = z.object(shape);
@@ -73,6 +77,14 @@ const rootSchema = (() => {
     shape[k] = zodFor(f);
   return z.object(shape).partial().strict();
 })();
+
+/** Validate (partial) page-level settings; used by the AI and "apply to all pages". */
+export function validateRoot(props: unknown) {
+  const parsed = rootSchema.safeParse(props ?? {});
+  if (!parsed.success)
+    throw new OpError(`Configurações inválidas: ${formatZod(parsed.error)}.`);
+  return parsed.data as Record<string, unknown>;
+}
 
 function formatZod(err: z.ZodError) {
   return err.issues
@@ -94,9 +106,7 @@ function assertType(type: unknown): BlockName {
 
 /** Fill list items with the item field defaults so partial items still render. */
 function normalizeLists(type: BlockName, props: Record<string, unknown>) {
-  for (const [k, f] of Object.entries(
-    blocks[type].fields as Record<string, FieldDef>
-  )) {
+  for (const [k, f] of Object.entries(fieldsFor(type))) {
     if (f.type === "list" && Array.isArray(props[k])) {
       props[k] = (props[k] as Record<string, unknown>[]).map((item) => {
         const filled: Record<string, unknown> = {};
@@ -128,7 +138,7 @@ export function validateProps(
     .strict()
     .safeParse(props ?? {});
   if (!parsed.success) {
-    const allowed = Object.keys(blocks[type].fields).join(", ");
+    const allowed = Object.keys(fieldsFor(type)).join(", ");
     throw new OpError(
       `Props inválidas para ${type}: ${formatZod(
         parsed.error

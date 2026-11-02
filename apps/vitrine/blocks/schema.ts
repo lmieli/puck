@@ -1,3 +1,5 @@
+import { fontOptions } from "./design.ts";
+
 // Single source of truth for every block: the Puck editor fields, the
 // validation used when the AI edits a page, and the catalog the AI reads are
 // all generated from these definitions. This file is pure data (no React) so
@@ -14,7 +16,7 @@ export type FieldDef =
       options: { value: string; label: string }[];
     }
   | { type: "boolean"; label: string; help?: string }
-  | { type: "color"; label: string; help?: string }
+  | { type: "color"; label: string; help?: string; optional?: boolean }
   | { type: "image"; label: string; help?: string }
   | {
       type: "list";
@@ -89,6 +91,110 @@ const align: FieldDef = {
 };
 
 /* ------------------------------------------------------------------ */
+/* Props every block accepts (spacing, background, motion, visibility)   */
+/* ------------------------------------------------------------------ */
+
+const spaceOptions = opt(
+  ["auto", "Padrão"],
+  ["none", "Nenhum"],
+  ["sm", "Pequeno"],
+  ["lg", "Grande"],
+  ["xl", "Enorme"]
+);
+
+export const commonFields = {
+  spaceTop: { type: "select", label: "Espaço acima", options: spaceOptions },
+  spaceBottom: {
+    type: "select",
+    label: "Espaço abaixo",
+    options: spaceOptions,
+  },
+  width: {
+    type: "select",
+    label: "Largura do conteúdo",
+    help: "auto segue a configuração da página",
+    options: opt(
+      ["auto", "Padrão da página"],
+      ["narrow", "Estreita"],
+      ["normal", "Normal"],
+      ["wide", "Larga"],
+      ["full", "Tela toda"]
+    ),
+  },
+  textAlign: {
+    type: "select",
+    label: "Alinhamento do texto",
+    options: opt(
+      ["auto", "Padrão do bloco"],
+      ["left", "Esquerda"],
+      ["center", "Centro"],
+      ["right", "Direita"]
+    ),
+  },
+  bgColor: {
+    type: "color",
+    label: "Cor de fundo",
+    optional: true,
+    help: "vazio = padrão do tema",
+  },
+  textColor: {
+    type: "color",
+    label: "Cor do texto",
+    optional: true,
+    help: "vazio = padrão do tema",
+  },
+  bgImage: {
+    type: "image",
+    label: "Imagem de fundo",
+    help: "funciona em seções comuns (Imagem + texto, Texto, Cartões, Números, Chamada final…), não na Abertura cinematográfica, no Produto em 3D nem na Galeria horizontal",
+  },
+  bgOverlay: {
+    type: "select",
+    label: "Escurecer a imagem de fundo",
+    help: "com imagem de fundo e escurecimento, o texto vira claro automaticamente",
+    options: opt(["none", "Não"], ["soft", "Leve"], ["strong", "Forte"]),
+  },
+  animation: {
+    type: "select",
+    label: "Animação de entrada",
+    options: opt(
+      ["auto", "Padrão"],
+      ["none", "Nenhuma"],
+      ["fade", "Aparecer"],
+      ["rise", "Subir"],
+      ["zoom", "Zoom"],
+      ["slide", "Deslizar"]
+    ),
+  },
+  hideOn: {
+    type: "select",
+    label: "Esconder em",
+    options: opt(
+      ["never", "Nunca"],
+      ["mobile", "Celular"],
+      ["desktop", "Computador"]
+    ),
+  },
+  anchor: { type: "text", label: "Âncora (para links como #contato)" },
+} satisfies Record<string, FieldDef>;
+
+export const commonDefaults = {
+  spaceTop: "auto",
+  spaceBottom: "auto",
+  width: "auto",
+  textAlign: "auto",
+  bgColor: "",
+  textColor: "",
+  bgImage: "",
+  bgOverlay: "soft",
+  animation: "auto",
+  hideOn: "never",
+  anchor: "",
+};
+
+export const commonKeys = Object.keys(commonFields);
+
+/* ------------------------------------------------------------------ */
 /* Blocks                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -113,8 +219,26 @@ export const blocks = {
       },
       ctaLabel: { type: "text", label: "Botão" },
       ctaHref: { type: "text", label: "Link do botão" },
+      navStyle: {
+        type: "select",
+        label: "Aparência do menu",
+        options: opt(
+          ["blur", "Vidro fosco"],
+          ["solid", "Cor sólida"],
+          ["transparent", "Transparente"]
+        ),
+      },
+      navAlign: {
+        type: "select",
+        label: "Posição dos links",
+        options: opt(["right", "Direita"], ["center", "Centro"]),
+      },
+      sticky: { type: "boolean", label: "Fixo no topo ao rolar" },
     },
     defaults: {
+      navStyle: "blur",
+      navAlign: "right",
+      sticky: true,
       brand: "Marca",
       logo: "",
       links: [
@@ -151,11 +275,46 @@ export const blocks = {
       subtitle: { type: "textarea", label: "Subtítulo" },
       image: { type: "image", label: "Imagem" },
       video: { type: "text", label: "Vídeo (URL .mp4, opcional)" },
+      mediaSize: {
+        type: "select",
+        label: "Tamanho da foto ao abrir",
+        help: "só no estilo cinematográfico: a foto começa como um cartão e cresce com a rolagem",
+        options: opt(
+          ["small", "Pequena"],
+          ["medium", "Média"],
+          ["large", "Grande"],
+          ["full", "Tela toda"]
+        ),
+      },
+      titleSize: {
+        type: "select",
+        label: "Tamanho do título",
+        options: opt(
+          ["sm", "Pequeno"],
+          ["md", "Médio"],
+          ["lg", "Grande"],
+          ["xl", "Enorme"]
+        ),
+      },
+      imagePosition: {
+        type: "select",
+        label: "Enquadramento da foto",
+        options: opt(
+          ["center", "Centro"],
+          ["top", "Topo"],
+          ["bottom", "Base"],
+          ["left", "Esquerda"],
+          ["right", "Direita"]
+        ),
+      },
       buttons,
       tone,
     },
     defaults: {
       variant: "cinematic",
+      mediaSize: "large",
+      titleSize: "md",
+      imagePosition: "center",
       eyebrow: "Novo",
       title: "Simplesmente extraordinário.",
       subtitle: "Uma frase que explica por que isto importa.",
@@ -300,6 +459,11 @@ export const blocks = {
       eyebrow: { type: "text", label: "Chamada" },
       title: { type: "textarea", label: "Frase" },
       text: { type: "textarea", label: "Texto" },
+      imagePosition: {
+        type: "select",
+        label: "Enquadramento da foto",
+        options: opt(["center", "Centro"], ["top", "Topo"], ["bottom", "Base"]),
+      },
       intensity: {
         type: "select",
         label: "Profundidade",
@@ -320,6 +484,7 @@ export const blocks = {
       },
     },
     defaults: {
+      imagePosition: "center",
       image: "",
       eyebrow: "",
       title: "Uma frase que respira.",
@@ -745,6 +910,336 @@ export const blocks = {
     },
   },
 
+  Text: {
+    label: "Texto",
+    category: "conteudo",
+    description:
+      "Bloco de texto livre: chamada, título, parágrafos e botões. Serve para manifestos, introduções, avisos e páginas institucionais.",
+    fields: {
+      eyebrow: { type: "text", label: "Chamada" },
+      title: { type: "textarea", label: "Título" },
+      body: {
+        type: "textarea",
+        label: "Texto (linha em branco separa parágrafos)",
+      },
+      size: {
+        type: "select",
+        label: "Tamanho do título",
+        options: opt(
+          ["sm", "Pequeno"],
+          ["md", "Médio"],
+          ["lg", "Grande"],
+          ["xl", "Enorme"]
+        ),
+      },
+      align,
+      buttons,
+      tone,
+    },
+    defaults: {
+      eyebrow: "",
+      title: "Um título claro.",
+      body: "Escreva aqui o texto. Separe os parágrafos com uma linha em branco.",
+      size: "md",
+      align: "center",
+      buttons: [],
+      tone: "auto",
+    },
+  },
+
+  Image: {
+    label: "Imagem",
+    category: "conteudo",
+    description:
+      "Uma imagem grande com legenda opcional, em largura contida ou tela cheia. Pode virar link.",
+    fields: {
+      image: { type: "image", label: "Imagem" },
+      alt: { type: "text", label: "Descrição da imagem (acessibilidade)" },
+      caption: { type: "text", label: "Legenda" },
+      ratio: {
+        type: "select",
+        label: "Proporção",
+        options: opt(
+          ["auto", "Original"],
+          ["16/9", "16:9"],
+          ["21/9", "Panorâmica 21:9"],
+          ["4/3", "4:3"],
+          ["1/1", "Quadrada"]
+        ),
+      },
+      fit: {
+        type: "select",
+        label: "Ajuste",
+        options: opt(["cover", "Preencher"], ["contain", "Mostrar inteira"]),
+      },
+      position: {
+        type: "select",
+        label: "Enquadramento",
+        options: opt(
+          ["center", "Centro"],
+          ["top", "Topo"],
+          ["bottom", "Base"],
+          ["left", "Esquerda"],
+          ["right", "Direita"]
+        ),
+      },
+      rounded: { type: "boolean", label: "Cantos arredondados" },
+      href: { type: "text", label: "Link ao clicar (opcional)" },
+      tone,
+    },
+    defaults: {
+      image: "",
+      alt: "",
+      caption: "",
+      ratio: "16/9",
+      fit: "cover",
+      position: "center",
+      rounded: true,
+      href: "",
+      tone: "auto",
+    },
+  },
+
+  Cards: {
+    label: "Cartões",
+    category: "conteudo",
+    description:
+      "Grade de cartões com imagem, título, texto e link. Use para serviços, produtos, equipe, projetos ou notícias.",
+    fields: {
+      eyebrow: { type: "text", label: "Chamada" },
+      title: { type: "text", label: "Título" },
+      intro: { type: "textarea", label: "Introdução" },
+      items: {
+        type: "list",
+        label: "Cartões",
+        summary: "title",
+        max: 12,
+        item: {
+          image: { type: "image", label: "Imagem" },
+          title: { type: "text", label: "Título" },
+          text: { type: "textarea", label: "Texto" },
+          linkLabel: { type: "text", label: "Texto do link" },
+          href: { type: "text", label: "Link" },
+        },
+      },
+      columns: {
+        type: "select",
+        label: "Colunas",
+        options: opt(["2", "2"], ["3", "3"], ["4", "4"]),
+      },
+      cardStyle: {
+        type: "select",
+        label: "Estilo do cartão",
+        options: opt(
+          ["filled", "Preenchido"],
+          ["outline", "Contorno"],
+          ["flat", "Sem moldura"]
+        ),
+      },
+      ratio: {
+        type: "select",
+        label: "Proporção da imagem",
+        options: opt(
+          ["16/10", "16:10"],
+          ["4/3", "4:3"],
+          ["1/1", "Quadrada"],
+          ["3/4", "Retrato"]
+        ),
+      },
+      tone,
+    },
+    defaults: {
+      eyebrow: "",
+      title: "O que fazemos",
+      intro: "",
+      items: [
+        {
+          image: "",
+          title: "Primeiro",
+          text: "Descrição curta do primeiro item.",
+          linkLabel: "Saiba mais",
+          href: "#",
+        },
+        {
+          image: "",
+          title: "Segundo",
+          text: "Descrição curta do segundo item.",
+          linkLabel: "Saiba mais",
+          href: "#",
+        },
+        {
+          image: "",
+          title: "Terceiro",
+          text: "Descrição curta do terceiro item.",
+          linkLabel: "Saiba mais",
+          href: "#",
+        },
+      ],
+      columns: "3",
+      cardStyle: "filled",
+      ratio: "16/10",
+      tone: "auto",
+    },
+  },
+
+  Pricing: {
+    label: "Planos e preços",
+    category: "conversao",
+    description:
+      "Tabela de planos lado a lado, com preço, lista de itens, botão e um plano em destaque.",
+    fields: {
+      eyebrow: { type: "text", label: "Chamada" },
+      title: { type: "text", label: "Título" },
+      intro: { type: "textarea", label: "Introdução" },
+      plans: {
+        type: "list",
+        label: "Planos",
+        summary: "name",
+        max: 4,
+        item: {
+          name: { type: "text", label: "Nome" },
+          badge: { type: "text", label: "Etiqueta (ex.: Mais popular)" },
+          price: { type: "text", label: "Preço" },
+          period: { type: "text", label: "Período (ex.: /mês)" },
+          description: { type: "text", label: "Descrição curta" },
+          features: { type: "textarea", label: "Itens (um por linha)" },
+          buttonLabel: { type: "text", label: "Texto do botão" },
+          href: { type: "text", label: "Link do botão" },
+          highlight: { type: "boolean", label: "Destacar este plano" },
+        },
+      },
+      tone,
+    },
+    defaults: {
+      eyebrow: "Planos",
+      title: "Escolha o seu plano.",
+      intro: "",
+      plans: [
+        {
+          name: "Essencial",
+          badge: "",
+          price: "R$ 0",
+          period: "/mês",
+          description: "Para começar.",
+          features: "Item um\nItem dois",
+          buttonLabel: "Começar",
+          href: "#",
+          highlight: false,
+        },
+        {
+          name: "Pro",
+          badge: "Mais popular",
+          price: "R$ 99",
+          period: "/mês",
+          description: "Para crescer.",
+          features: "Tudo do Essencial\nItem três\nItem quatro",
+          buttonLabel: "Assinar",
+          href: "#",
+          highlight: true,
+        },
+        {
+          name: "Empresas",
+          badge: "",
+          price: "Sob consulta",
+          period: "",
+          description: "Para grandes equipes.",
+          features: "Tudo do Pro\nSuporte dedicado",
+          buttonLabel: "Falar conosco",
+          href: "#",
+          highlight: false,
+        },
+      ],
+      tone: "auto",
+    },
+  },
+
+  Logos: {
+    label: "Logos de clientes",
+    category: "conteudo",
+    description:
+      "Faixa de logos de clientes, parceiros ou imprensa, em uma linha que quebra no celular.",
+    fields: {
+      title: { type: "text", label: "Título (opcional)" },
+      items: {
+        type: "list",
+        label: "Logos",
+        summary: "name",
+        max: 12,
+        item: {
+          image: { type: "image", label: "Logo" },
+          name: { type: "text", label: "Nome" },
+          href: { type: "text", label: "Link (opcional)" },
+        },
+      },
+      grayscale: { type: "boolean", label: "Logos em tons de cinza" },
+      tone,
+    },
+    defaults: {
+      title: "Quem confia em nós",
+      items: [
+        { image: "", name: "Cliente 1", href: "" },
+        { image: "", name: "Cliente 2", href: "" },
+        { image: "", name: "Cliente 3", href: "" },
+        { image: "", name: "Cliente 4", href: "" },
+      ],
+      grayscale: true,
+      tone: "auto",
+    },
+  },
+
+  Embed: {
+    label: "Vídeo ou mapa",
+    category: "conteudo",
+    description:
+      "Incorpora um vídeo (YouTube, Vimeo, Loom), um mapa (Google Maps embed, OpenStreetMap) ou uma agenda (Calendly). Aceita só endereços https de provedores conhecidos; não aceita HTML nem scripts.",
+    fields: {
+      eyebrow: { type: "text", label: "Chamada" },
+      title: { type: "text", label: "Título" },
+      url: {
+        type: "text",
+        label:
+          "Endereço (cole o link do vídeo ou o link de incorporação do mapa)",
+      },
+      ratio: {
+        type: "select",
+        label: "Proporção",
+        options: opt(
+          ["16/9", "16:9"],
+          ["21/9", "21:9"],
+          ["4/3", "4:3"],
+          ["1/1", "Quadrada"]
+        ),
+      },
+      tone,
+    },
+    defaults: {
+      eyebrow: "",
+      title: "",
+      url: "",
+      ratio: "16/9",
+      tone: "auto",
+    },
+  },
+
+  Divider: {
+    label: "Divisor",
+    category: "estrutura",
+    description: "Linha, pontilhado ou ornamento para separar seções.",
+    fields: {
+      style: {
+        type: "select",
+        label: "Estilo",
+        options: opt(
+          ["line", "Linha"],
+          ["dashed", "Tracejado"],
+          ["dots", "Pontos"]
+        ),
+      },
+      narrow: { type: "boolean", label: "Linha curta, centralizada" },
+    },
+    defaults: { style: "line", narrow: false },
+  },
+
   Space: {
     label: "Espaço",
     category: "estrutura",
@@ -804,35 +1299,207 @@ export const blockNames = Object.keys(blocks) as BlockName[];
 export const rootFields = {
   title: { type: "text", label: "Título da página (Google e aba)" },
   description: { type: "textarea", label: "Descrição para o Google" },
+  ogImage: { type: "image", label: "Imagem ao compartilhar o link" },
   theme: {
     type: "select",
     label: "Tema",
-    options: opt(["light", "Claro"], ["dark", "Escuro"]),
+    help: "auto segue o modo claro/escuro do aparelho de quem visita",
+    options: opt(
+      ["light", "Claro"],
+      ["dark", "Escuro"],
+      ["auto", "Automático"]
+    ),
   },
   accent: { type: "color", label: "Cor de destaque" },
+  bgColor: {
+    type: "color",
+    label: "Cor de fundo da página",
+    optional: true,
+    help: "vazio = padrão do tema",
+  },
+  textColor: {
+    type: "color",
+    label: "Cor do texto",
+    optional: true,
+    help: "vazio = padrão do tema",
+  },
   font: {
     type: "select",
-    label: "Tipografia",
-    help: "clean = sem serifa neutra; editorial = títulos serifados; geometric = títulos geométricos",
+    label: "Combinação de fontes",
+    help: "clean = sem serifa neutra; editorial = títulos serifados; geometric = títulos geométricos. headingFont e bodyFont sobrepõem a combinação",
     options: opt(
       ["clean", "Limpa (Inter)"],
       ["editorial", "Editorial (serifada)"],
       ["geometric", "Geométrica"]
     ),
   },
+  headingFont: {
+    type: "select",
+    label: "Fonte dos títulos",
+    options: [{ value: "auto", label: "Da combinação" }, ...fontOptions],
+  },
+  bodyFont: {
+    type: "select",
+    label: "Fonte do texto",
+    options: [{ value: "auto", label: "Da combinação" }, ...fontOptions],
+  },
+  headingWeight: {
+    type: "select",
+    label: "Peso dos títulos",
+    options: opt(
+      ["auto", "Da fonte"],
+      ["400", "Regular"],
+      ["500", "Médio"],
+      ["600", "Semi-negrito"],
+      ["700", "Negrito"],
+      ["800", "Extra negrito"]
+    ),
+  },
+  titleScale: {
+    type: "select",
+    label: "Tamanho dos títulos",
+    options: opt(
+      ["sm", "Menores"],
+      ["md", "Padrão"],
+      ["lg", "Maiores"],
+      ["xl", "Enormes"]
+    ),
+  },
+  radius: {
+    type: "select",
+    label: "Cantos arredondados",
+    options: opt(
+      ["none", "Retos"],
+      ["sm", "Discretos"],
+      ["md", "Padrão"],
+      ["lg", "Redondos"],
+      ["xl", "Bem redondos"]
+    ),
+  },
+  buttonShape: {
+    type: "select",
+    label: "Formato dos botões",
+    options: opt(
+      ["pill", "Cápsula"],
+      ["rounded", "Arredondado"],
+      ["square", "Reto"]
+    ),
+  },
+  contentWidth: {
+    type: "select",
+    label: "Largura do conteúdo",
+    options: opt(
+      ["narrow", "Estreita"],
+      ["normal", "Normal"],
+      ["wide", "Larga"]
+    ),
+  },
+  density: {
+    type: "select",
+    label: "Espaço entre seções",
+    options: opt(
+      ["compact", "Compacto"],
+      ["normal", "Normal"],
+      ["airy", "Arejado"]
+    ),
+  },
+  animations: {
+    type: "boolean",
+    label: "Animações de rolagem",
+    help: "desligar deixa a página estática, sem parallax nem efeitos presos à rolagem",
+  },
+  customCss: {
+    type: "textarea",
+    label: "CSS personalizado (avançado)",
+    help: "CSS puro aplicado só a esta página. Use as classes .v-site, .v-section, .v-h2, .v-btn… Não aceita @import, scripts nem HTML",
+  },
 } satisfies Record<string, FieldDef>;
 
 export const rootDefaults = {
   title: "",
   description: "",
+  ogImage: "",
   theme: "light",
   accent: "#0071e3",
+  bgColor: "",
+  textColor: "",
   font: "clean",
+  headingFont: "auto",
+  bodyFont: "auto",
+  headingWeight: "auto",
+  titleScale: "md",
+  radius: "md",
+  buttonShape: "pill",
+  contentWidth: "normal",
+  density: "normal",
+  animations: true,
+  customCss: "",
 };
 
 export type RootProps = typeof rootDefaults;
 
+/** How the page settings are grouped in the editor sidebar. */
+export const rootGroups: {
+  label: string;
+  keys: (keyof typeof rootFields)[];
+  open?: boolean;
+}[] = [
+  {
+    label: "Página e Google",
+    keys: ["title", "description", "ogImage"],
+    open: true,
+  },
+  {
+    label: "Cores e tema",
+    keys: ["theme", "accent", "bgColor", "textColor"],
+    open: true,
+  },
+  {
+    label: "Tipografia",
+    keys: ["font", "headingFont", "bodyFont", "headingWeight", "titleScale"],
+  },
+  {
+    label: "Formato e espaço",
+    keys: ["radius", "buttonShape", "contentWidth", "density"],
+  },
+  { label: "Avançado", keys: ["animations", "customCss"] },
+];
+
+/** Block-specific fields plus the props every block accepts. */
+export function fieldsFor(type: BlockName): Record<string, FieldDef> {
+  return {
+    ...(blocks[type].fields as Record<string, FieldDef>),
+    ...commonFields,
+  };
+}
+
 /** Default props for a block, deep-copied so callers can mutate them. */
 export function defaultsFor(type: BlockName): Record<string, unknown> {
-  return JSON.parse(JSON.stringify(blocks[type].defaults));
+  return JSON.parse(
+    JSON.stringify({ ...commonDefaults, ...blocks[type].defaults })
+  );
+}
+
+type LooseBlock = { type: string; props: Record<string, unknown> };
+type LoosePage = {
+  root: { props: Record<string, unknown> };
+  content: LooseBlock[];
+};
+
+/**
+ * Fill in props a page does not have yet (new fields added after it was
+ * saved) with their defaults, so the editor always shows a value. Existing
+ * values are never touched.
+ */
+export function fillDefaults(page: LoosePage): LoosePage {
+  const root = { ...rootDefaults, ...page.root.props };
+  const content = page.content.map((b) => {
+    if (!(b.type in blocks)) return b;
+    const defaults = defaultsFor(b.type as BlockName);
+    const props: Record<string, unknown> = { ...b.props };
+    for (const [k, v] of Object.entries(defaults))
+      if (!(k in props)) props[k] = v;
+    return { ...b, props };
+  });
+  return { ...page, root: { ...page.root, props: root }, content };
 }

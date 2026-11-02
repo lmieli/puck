@@ -8,7 +8,7 @@ import {
   type Data,
   type Plugin,
 } from "@puckeditor/core";
-import { History, Layers, LayoutGrid, Sparkles } from "lucide-react";
+import { History, Layers, LayoutGrid, Palette, Sparkles } from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -21,6 +21,7 @@ import {
 import { config } from "@/blocks/config";
 import { EditorContext } from "@/blocks/fields";
 import { AiPanel } from "./AiPanel";
+import { DesignPanel } from "./DesignPanel";
 import { HistoryPanel } from "./HistoryPanel";
 import { ptBR } from "./dictionary";
 
@@ -251,6 +252,18 @@ export function Editor(props: Props) {
       },
       blocksPlugin({ label: "Blocos", icon: <LayoutGrid /> }),
       outlinePlugin({ label: "Estrutura", icon: <Layers /> }),
+      {
+        name: "design",
+        label: "Design",
+        icon: <Palette />,
+        render: () => (
+          <DesignPanel
+            siteSlug={site.slug}
+            path={path}
+            canApplyAll={role !== "editor"}
+          />
+        ),
+      },
       {
         name: "history",
         label: "Versões",

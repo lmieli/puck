@@ -108,30 +108,44 @@ function ColorField({
   onChange,
   label,
   readOnly,
+  optional,
 }: {
   value: string;
   onChange: (v: string) => void;
   label: string;
   readOnly?: boolean;
+  optional?: boolean;
 }) {
-  const safe = /^#[0-9a-fA-F]{6}$/.test(value || "") ? value : "#000000";
+  const valid = /^#[0-9a-fA-F]{6}$/.test(value || "");
   return (
     <div className="vx-field">
       <span className="vx-field-label">{label}</span>
       <div className="vx-color">
         <input
           type="color"
-          value={safe}
+          value={valid ? value : "#000000"}
           disabled={readOnly}
           onChange={(e) => onChange(e.target.value)}
           aria-label={label}
+          className={optional && !valid ? "is-empty" : undefined}
         />
         <input
           className="vx-input"
           value={value || ""}
+          placeholder={optional ? "padrão do tema" : "#rrggbb"}
           readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
         />
+        {optional && value && (
+          <button
+            type="button"
+            className="vx-clear"
+            disabled={readOnly}
+            onClick={() => onChange("")}
+          >
+            Limpar
+          </button>
+        )}
       </div>
     </div>
   );
@@ -167,6 +181,7 @@ export function toPuckField(def: FieldDef): Field {
             onChange={onChange}
             label={def.label}
             readOnly={readOnly}
+            optional={def.optional}
           />
         ),
       };

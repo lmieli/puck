@@ -40,6 +40,20 @@ Configurações de página: tema claro ou escuro, cor de destaque, tipografia (l
 
 As animações rodam sem bibliotecas: o progresso da rolagem vira uma variável CSS atualizada por `requestAnimationFrame`, então o React não renderiza de novo durante a rolagem. Quem pede movimento reduzido no sistema recebe a página estática.
 
+## Personalização
+
+Tudo é ajustável em três níveis, sem código e sem deploy. A IA enxerga os mesmos campos e usa todos eles.
+
+**1. Página inteira** (clique fora de qualquer bloco): título e imagem de compartilhamento para o Google; tema claro, escuro ou automático; cor de destaque, de fundo e de texto; combinação de fontes ou fonte própria para títulos e texto (14 famílias, carregadas só quando usadas); peso e tamanho dos títulos; cantos arredondados; formato dos botões; largura do conteúdo; espaço entre seções; animações de rolagem ligadas ou desligadas; e CSS próprio como último recurso (sem `@import`, scripts nem HTML).
+
+**2. Estilos prontos** (aba "Design" do editor): seis pontos de partida (claro e limpo, escuro cinematográfico, editorial, ousado, suave e quente, tech). Aplicam-se à página aberta e, com um clique, ao rascunho de todas as outras páginas do site.
+
+**3. Cada bloco** (grupo "Estilo e espaçamento" de todo bloco): espaço acima e abaixo, largura, alinhamento do texto, cor de fundo e de texto, imagem de fundo com escurecimento (o texto vira claro sozinho), animação de entrada (aparecer, subir, zoom, deslizar ou nenhuma), esconder no celular ou no computador e âncora para links. Além disso, cada bloco tem as próprias opções: a Abertura, por exemplo, escolhe o tamanho da foto ao abrir (pequena, média, grande, tela toda), o tamanho do título e o enquadramento da foto.
+
+Blocos livres para montar qualquer tipo de site: **Texto**, **Imagem**, **Cartões**, **Planos e preços**, **Logos de clientes**, **Vídeo ou mapa** (YouTube, Vimeo, Loom, Google Maps, OpenStreetMap, Calendly, sempre isolados) e **Divisor**, além dos blocos cinematográficos.
+
+Por segurança, não existe bloco de HTML ou script livre: os sites rodam no mesmo domínio do painel, e um script de um cliente poderia atacar os outros. O CSS próprio é limpo antes de ir ao ar.
+
 ## Como a IA funciona
 
 1. O painel envia o pedido, a página atual (JSON), o bloco selecionado e as últimas mensagens para `/api/ai`.
@@ -97,6 +111,7 @@ pnpm --filter vitrine test
 ```
 
 - `tests/page-ops.test.ts`: as operações da IA (inserir, editar, mover, remover, reconstruir), a validação, os modelos e o catálogo.
+- `tests/design.test.ts`: os controles de personalização (props comuns, configurações da página, blocos novos, links incorporados, limpeza do CSS, estilos prontos e preenchimento de campos novos em páginas antigas).
 - `tests/agent.test.ts`: roda o agente real (SDK da Anthropic, streaming, ferramentas) contra um servidor falso da API. Confere o formato do pedido, a execução das ferramentas e a correção após um erro.
 
 ## Arquitetura

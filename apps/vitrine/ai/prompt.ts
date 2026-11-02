@@ -1,4 +1,9 @@
-import { blocks, rootFields, type FieldDef } from "../blocks/schema.ts";
+import {
+  blocks,
+  commonFields,
+  rootFields,
+  type FieldDef,
+} from "../blocks/schema.ts";
 import { stock } from "../lib/stock.ts";
 
 function describeField(f: FieldDef): unknown {
@@ -15,7 +20,7 @@ function describeField(f: FieldDef): unknown {
       return { type: "list", ...(f.max ? { max: f.max } : {}), item };
     }
     case "color":
-      return "color #rrggbb";
+      return f.optional ? "color #rrggbb ou vazio" : "color #rrggbb";
     case "image":
       return "image URL (string, vazio = placeholder elegante)";
     default:
@@ -34,7 +39,10 @@ export function blockCatalog() {
   const root: Record<string, unknown> = {};
   for (const [k, f] of Object.entries(rootFields as Record<string, FieldDef>))
     root[k] = describeField(f);
-  return { blocks: out, pageSettings: root };
+  const common: Record<string, unknown> = {};
+  for (const [k, f] of Object.entries(commonFields as Record<string, FieldDef>))
+    common[k] = describeField(f);
+  return { blocks: out, commonBlockProps: common, pageSettings: root };
 }
 
 // Stable system prompt (cached). Volatile data (the page, the selection, the
@@ -57,6 +65,15 @@ Os sites da Vitrine seguem a linguagem de grandes lançamentos de produto: minim
 - Imagens: use as da página ou do cliente; se faltar, escolha da biblioteca abaixo pela descrição, ou deixe vazio (o bloco mostra um gradiente elegante na cor de destaque).
 - Não invente fatos verificáveis sobre um negócio real (preços, prêmios, números, endereços). Quando faltar o dado, escreva um texto claramente provisório, como "Preço a definir" ou "[número de clientes]".
 - Escreva no idioma do site (por padrão, português do Brasil).
+
+## Personalização (use para atender pedidos de estilo sem inventar blocos)
+Toda mudança visual pedida deve virar props. Procure primeiro nos campos do bloco, depois nos campos comuns, depois nas configurações da página.
+- **Configurações da página** (update_page): theme (light, dark ou auto), accent, bgColor e textColor (cores de fundo e de texto da página; vazio = padrão do tema), font (combinação) ou headingFont e bodyFont (famílias específicas), headingWeight, titleScale (tamanho dos títulos), radius (cantos), buttonShape, contentWidth, density (espaço entre seções), animations (false deixa a página estática) e customCss (CSS puro, último recurso).
+- **Props comuns a todos os blocos** (update_block, em commonBlockProps do catálogo): spaceTop e spaceBottom, width, textAlign, bgColor, textColor, bgImage com bgOverlay, animation, hideOn e anchor. Exemplos: "mais respiro antes desta seção" é spaceTop "lg"; "fundo preto aqui" é bgColor "#000000" com textColor "#ffffff"; "não mostre no celular" é hideOn "mobile".
+- **Foto da abertura pequena ou grande**: Hero.mediaSize (small, medium, large, full); título grande demais: Hero.titleSize ou update_page titleScale.
+- "Deixe mais sofisticado/moderno/aconchegante" pede combinação de mudanças de página: tema, accent, fontes, radius e density, e não só um campo.
+- Dê o menor passo que cumpre o pedido e diga na resposta final o que mudou e como desfazer ("é só pedir para voltar").
+- customCss só quando nenhum campo resolve; escreva CSS curto, sem @import, usando as classes .v-site, .v-section, .v-h2, .v-btn.
 
 ## Biblioteca de imagens
 ${stock.map((s) => `- ${s.url} — ${s.tags}`).join("\n")}

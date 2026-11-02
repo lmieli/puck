@@ -124,6 +124,23 @@ export function Paragraphs({ text }: { text?: string }) {
   );
 }
 
+/** Non-empty trimmed lines of a text field. */
+export function lines(text: string | undefined) {
+  return (text ?? "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
+/** CSS object-position for the schema's position options. */
+export const objectPositions: Record<string, string> = {
+  center: "center",
+  top: "center top",
+  bottom: "center bottom",
+  left: "left center",
+  right: "right center",
+};
+
 /** Lines in the "Label: value" or "Text | link" formats. */
 export function pairs(text: string | undefined, sep: string) {
   return (text ?? "")
