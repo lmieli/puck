@@ -216,9 +216,18 @@ Sites publicados: `/sites/aurora` (lançamento de produto), `/sites/gemini` (con
 
 ### Site do ParkFlow
 
-Site de venda do ParkFlow (sistema de gestão de estacionamento), em `lib/parkflow.ts`. Os textos vêm da landing page do próprio produto e só prometem o que ele faz hoje; as imagens são telas de uma base de demonstração com dados fictícios, em `public/modelos/parkflow/` (servidas em qualquer domínio). Uma página só: abertura com o painel, recursos com as telas, como funciona, para quem, perguntas frequentes e o bloco Cadastro "Pedido de demonstração" (nome, WhatsApp, estacionamento, cidade, vagas e mensagem, com consentimento da LGPD), que grava na aba Contatos.
+Site de venda do ParkFlow (sistema de gestão de estacionamento), em `lib/parkflow.ts`. Os textos vêm da landing page e da documentação do próprio produto e só prometem o que ele faz hoje; as imagens são telas de uma base de demonstração com dados fictícios, em `public/modelos/parkflow/` (servidas em qualquer domínio). Quatro páginas, cada uma com título e descrição próprios para o Google (nota 100 na revisão de SEO, conferida em teste):
 
-O site é criado já publicado **uma única vez por banco**, também em bancos que já existiam (`ensureParkflowSite`, marcado na tabela `seeded_sites`). Se a agência apagá-lo, ele não volta; se já houver outro site no endereço `parkflow`, nada é alterado. Depois de criado, é um site como qualquer outro: edite no editor ou pela IA. Falta preencher o WhatsApp (aba WhatsApp), o domínio próprio e, se quiser, o rastreamento.
+| Página         | Busca que ela mira                               |
+| -------------- | ------------------------------------------------ |
+| `/`            | sistema para estacionamento com leitura de placa |
+| `/mensalistas` | controle de mensalistas para estacionamento      |
+| `/convenios`   | convênio de estacionamento com lojas e clínicas  |
+| `/sem-cancela` | estacionamento sem cancela                       |
+
+Todas terminam no bloco Cadastro "Pedido de demonstração" (nome, WhatsApp, estacionamento, cidade, vagas e mensagem, com consentimento da LGPD), que grava na aba Contatos, e se ligam pelo menu, pelo rodapé e pelos cartões "Veja também".
+
+O site é criado já publicado **uma única vez por banco**, também em bancos que já existiam (`ensureParkflowSite`, marcado na tabela `seeded_sites`). Se a agência apagá-lo, ele não volta; se já houver outro site no endereço `parkflow`, nada é alterado. Em bancos com a 1ª versão (só a página inicial), `upgradeParkflowSite` acrescenta as páginas novas e troca a página inicial pela nova só se ela continua exatamente como foi criada (a versão antiga fica no histórico); página editada pela agência não é tocada. Depois de criado, é um site como qualquer outro: edite no editor ou pela IA. Falta preencher o WhatsApp (aba WhatsApp), o domínio próprio e, se quiser, o rastreamento.
 
 Sem `OPENROUTER_API_KEY`, tudo funciona menos a IA, e o painel avisa o que falta. `VITRINE_AI_MOCK=1` liga um modo de teste que entende poucas frases e serve só para testar o fluxo sem chave.
 

@@ -160,30 +160,38 @@ function geminiPages() {
   return pages;
 }
 
+// Versões do conteúdo do site do ParkFlow já aplicadas a um banco (tabela
+// seeded_sites). "parkflow" = site criado; "parkflow:v2" = título novo e as
+// páginas Mensalistas, Convênios e Sem cancela.
+const PARKFLOW_V2 = `${PARKFLOW_SLUG}:v2`;
+
 /**
  * Cria o site de venda do ParkFlow uma única vez por banco, inclusive em bancos
- * que já existiam antes dele. Se a agência apagar o site depois, ele não volta
- * (a marca fica em seeded_sites). Se já houver outro site com o mesmo endereço,
- * nada é criado nem alterado.
+ * que já existiam antes dele, e depois aplica as atualizações do conteúdo
+ * (`upgradeParkflowSite`). Se a agência apagar o site, ele não volta (a marca
+ * fica em seeded_sites). Se já houver outro site com o mesmo endereço, nada é
+ * criado nem alterado.
  */
 export function ensureParkflowSite(conn: Database.Database) {
   conn.exec(
     "CREATE TABLE IF NOT EXISTS seeded_sites (slug TEXT PRIMARY KEY, created_at TEXT NOT NULL DEFAULT (datetime('now')))"
   );
-  const done = conn
-    .prepare("SELECT 1 FROM seeded_sites WHERE slug = ?")
-    .get(PARKFLOW_SLUG);
-  if (done) return null;
+  const marked = (slug: string) =>
+    !!conn.prepare("SELECT 1 FROM seeded_sites WHERE slug = ?").get(slug);
   const owner = conn
     .prepare(
       "SELECT id FROM users WHERE is_super_admin = 1 ORDER BY created_at LIMIT 1"
     )
     .get() as { id: string } | undefined;
   if (!owner) return null;
+  if (marked(PARKFLOW_SLUG)) {
+    if (!marked(PARKFLOW_V2)) upgradeParkflowSite(conn, owner.id);
+    return null;
+  }
   return conn.transaction(() => {
-    conn
-      .prepare("INSERT INTO seeded_sites (slug) VALUES (?)")
-      .run(PARKFLOW_SLUG);
+    const mark = conn.prepare("INSERT INTO seeded_sites (slug) VALUES (?)");
+    mark.run(PARKFLOW_SLUG);
+    mark.run(PARKFLOW_V2);
     const taken = conn
       .prepare("SELECT 1 FROM sites WHERE slug = ?")
       .get(PARKFLOW_SLUG);
@@ -204,6 +212,93 @@ export function ensureParkflowSite(conn: Database.Database) {
       )
       .run(id, owner.id, "Site de venda do ParkFlow criado e publicado");
     return id;
+  })();
+}
+
+/**
+ * Site criado na 1ª versão: acrescenta as páginas novas que ainda não existem
+ * (publicadas) e troca a página inicial pela nova (título para o Google e links
+ * das páginas) SÓ se ela continua exatamente como foi criada: página editada
+ * ou republicada pela agência não é tocada. A troca vira a versão 2 da página,
+ * e a versão 1 continua no histórico para restaurar.
+ */
+export function upgradeParkflowSite(conn: Database.Database, ownerId: string) {
+  conn.transaction(() => {
+    conn.prepare("INSERT INTO seeded_sites (slug) VALUES (?)").run(PARKFLOW_V2);
+    const site = conn
+      .prepare("SELECT id FROM sites WHERE slug = ?")
+      .get(PARKFLOW_SLUG) as { id: string } | undefined;
+    if (!site) return;
+    const pages = parkflowPages();
+    const changed: string[] = [];
+    for (const [path, data] of Object.entries(pages)) {
+      const json = JSON.stringify(data);
+      const row = conn
+        .prepare(
+          "SELECT draft, published, published_version FROM pages WHERE site_id = ? AND path = ?"
+        )
+        .get(site.id, path) as
+        | { draft: string; published: string | null; published_version: number }
+        | undefined;
+      if (!row) {
+        conn
+          .prepare(
+            "INSERT INTO pages (site_id, path, draft, published, published_version, updated_by) VALUES (?, ?, ?, ?, 1, ?)"
+          )
+          .run(site.id, path, json, json, ownerId);
+        conn
+          .prepare(
+            "INSERT INTO versions (site_id, path, number, data, note, source, author_id) VALUES (?, ?, 1, ?, ?, 'template', ?)"
+          )
+          .run(site.id, path, json, "Criado a partir do modelo", ownerId);
+        changed.push(path);
+        continue;
+      }
+      if (path !== "/") continue;
+      const versions = conn
+        .prepare(
+          "SELECT number, source, data FROM versions WHERE site_id = ? AND path = ?"
+        )
+        .all(site.id, path) as {
+        number: number;
+        source: string;
+        data: string;
+      }[];
+      const untouched =
+        row.published_version === 1 &&
+        row.draft === row.published &&
+        versions.length === 1 &&
+        versions[0].source === "template" &&
+        versions[0].data === row.published;
+      if (!untouched) continue;
+      conn
+        .prepare(
+          "UPDATE pages SET draft = ?, published = ?, published_version = 2, updated_by = ?, updated_at = datetime('now') WHERE site_id = ? AND path = ?"
+        )
+        .run(json, json, ownerId, site.id, path);
+      conn
+        .prepare(
+          "INSERT INTO versions (site_id, path, number, data, note, source, author_id) VALUES (?, ?, 2, ?, ?, 'template', ?)"
+        )
+        .run(
+          site.id,
+          path,
+          json,
+          "Título para o Google e links das novas páginas",
+          ownerId
+        );
+      changed.push(path);
+    }
+    if (changed.length)
+      conn
+        .prepare(
+          "INSERT INTO activity (site_id, user_id, kind, detail) VALUES (?, ?, 'site', ?)"
+        )
+        .run(
+          site.id,
+          ownerId,
+          `Site do ParkFlow atualizado: ${changed.join(", ")}`
+        );
   })();
 }
 

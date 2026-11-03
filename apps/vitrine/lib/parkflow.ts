@@ -28,20 +28,106 @@ const SCREENSHOT_CSS = `.v-feature-media { aspect-ratio: auto; background: trans
 .v-feature-img { height: auto !important; object-fit: contain; }
 .v-story-img { object-fit: contain; }`;
 
-export function parkflowPages(): Record<string, PageData> {
-  const year = new Date().getFullYear();
-  const nav = b("Nav", {
+/** Menu de todas as páginas; nas internas, as âncoras apontam para a página inicial. */
+const navBar = (home: "" | "/") =>
+  b("Nav", {
     brand: PARKFLOW_NAME,
     links: [
-      { label: "Recursos", href: "#recursos" },
-      { label: "Como funciona", href: "#como-funciona" },
-      { label: "Para quem", href: "#para-quem" },
-      { label: "Perguntas", href: "#perguntas" },
+      { label: "Recursos", href: `${home}#recursos` },
+      { label: "Mensalistas", href: "/mensalistas" },
+      { label: "Convênios", href: "/convenios" },
+      { label: "Sem cancela", href: "/sem-cancela" },
+      { label: "Perguntas", href: `${home}#perguntas` },
       { label: "Entrar", href: PARKFLOW_APP_URL },
     ],
     ctaLabel: "Pedir demonstração",
     ctaHref: "#contato",
   });
+
+/** Configurações de página (título e descrição para o Google, tema). */
+const root = (title: string, description: string, ogImage: string) => ({
+  props: {
+    ...rootDefaults,
+    title,
+    description,
+    ogImage,
+    theme: "light",
+    accent: ACCENT,
+    font: "clean",
+    buttonShape: "pill",
+    customCss: SCREENSHOT_CSS,
+  },
+});
+
+const demoForm = () =>
+  b("Signup", {
+    anchor: "contato",
+    formName: "Pedido de demonstração",
+    layout: "full",
+    eyebrow: "Demonstração",
+    title: "Veja o ParkFlow funcionando no seu estacionamento.",
+    text: "Conte um pouco sobre a sua operação. Retornamos para combinar uma demonstração sem compromisso: mostramos o sistema funcionando, da portaria ao painel do dono, e indicamos o conjunto de equipamentos ideal para o seu caso.",
+    fields: [
+      { kind: "name", label: "Seu nome", required: true, options: "" },
+      { kind: "whatsapp", label: "WhatsApp", required: true, options: "" },
+      {
+        kind: "company",
+        label: "Nome do estacionamento",
+        required: false,
+        options: "",
+      },
+      { kind: "city", label: "Cidade", required: false, options: "" },
+      {
+        kind: "choice",
+        label: "Quantas vagas?",
+        required: false,
+        options:
+          "Até 50 vagas\n51 a 150 vagas\n151 a 400 vagas\nMais de 400 vagas\nVárias unidades",
+      },
+      {
+        kind: "longtext",
+        label: "Quer contar mais?",
+        required: false,
+        options: "",
+      },
+    ],
+    button: "Pedir demonstração",
+    success:
+      "Recebemos o seu pedido. Vamos falar com você para combinar a demonstração.",
+    consentOn: true,
+    consentText:
+      "Concordo em ser contatado sobre a demonstração do ParkFlow. Meus dados são usados só para isso.",
+    consentLink: "",
+    after: "message",
+    afterMessage: "Olá! Acabei de pedir uma demonstração do ParkFlow.",
+    tone: "inverse",
+  });
+
+const footer = () =>
+  b("Footer", {
+    brand: PARKFLOW_NAME,
+    tagline: "Gestão de estacionamentos com leitura de placa.",
+    columns: [
+      {
+        title: "Produto",
+        links:
+          "Recursos | /#recursos\nComo funciona | /#como-funciona\nPara quem | /#para-quem\nPerguntas | /#perguntas",
+      },
+      {
+        title: "Soluções",
+        links:
+          "Mensalistas | /mensalistas\nConvênios com lojas | /convenios\nEstacionamento sem cancela | /sem-cancela",
+      },
+      {
+        title: "Clientes",
+        links: `Entrar no sistema | ${PARKFLOW_APP_URL}\nPedir demonstração | #contato`,
+      },
+    ],
+    legal: `© ${new Date().getFullYear()} ParkFlow.`,
+  });
+
+export function parkflowPages(): Record<string, PageData> {
+  const nav = navBar("");
 
   const content = [
     nav,
@@ -378,15 +464,15 @@ export function parkflowPages(): Record<string, PageData> {
           image: "",
           title: "Comércio e serviços",
           text: "Clínicas, lojas e restaurantes com convênio e validação do ticket pelo parceiro.",
-          linkLabel: "",
-          href: "",
+          linkLabel: "Ver convênios",
+          href: "/convenios",
         },
         {
           image: "",
           title: "Garagens de mensalistas",
           text: "Condomínios comerciais e edifícios, com contratos, vagas e inadimplência sob controle.",
-          linkLabel: "",
-          href: "",
+          linkLabel: "Ver mensalistas",
+          href: "/mensalistas",
         },
       ],
       tone: "auto",
@@ -433,83 +519,291 @@ export function parkflowPages(): Record<string, PageData> {
       ],
       tone: "subtle",
     }),
-    b("Signup", {
-      anchor: "contato",
-      formName: "Pedido de demonstração",
-      layout: "full",
-      eyebrow: "Demonstração",
-      title: "Veja o ParkFlow funcionando no seu estacionamento.",
-      text: "Conte um pouco sobre a sua operação. Retornamos para combinar uma demonstração sem compromisso: mostramos o sistema funcionando, da portaria ao painel do dono, e indicamos o conjunto de equipamentos ideal para o seu caso.",
-      fields: [
-        { kind: "name", label: "Seu nome", required: true, options: "" },
-        { kind: "whatsapp", label: "WhatsApp", required: true, options: "" },
-        {
-          kind: "company",
-          label: "Nome do estacionamento",
-          required: false,
-          options: "",
-        },
-        { kind: "city", label: "Cidade", required: false, options: "" },
-        {
-          kind: "choice",
-          label: "Quantas vagas?",
-          required: false,
-          options:
-            "Até 50 vagas\n51 a 150 vagas\n151 a 400 vagas\nMais de 400 vagas\nVárias unidades",
-        },
-        {
-          kind: "longtext",
-          label: "Quer contar mais?",
-          required: false,
-          options: "",
-        },
-      ],
-      button: "Pedir demonstração",
-      success:
-        "Recebemos o seu pedido. Vamos falar com você para combinar a demonstração.",
-      consentOn: true,
-      consentText:
-        "Concordo em ser contatado sobre a demonstração do ParkFlow. Meus dados são usados só para isso.",
-      consentLink: "",
-      after: "message",
-      afterMessage: "Olá! Acabei de pedir uma demonstração do ParkFlow.",
-      tone: "inverse",
-    }),
-    b("Footer", {
-      brand: PARKFLOW_NAME,
-      tagline: "Gestão de estacionamentos com leitura de placa.",
-      columns: [
-        {
-          title: "Produto",
-          links:
-            "Recursos | #recursos\nComo funciona | #como-funciona\nPara quem | #para-quem\nPerguntas | #perguntas",
-        },
-        {
-          title: "Clientes",
-          links: `Entrar no sistema | ${PARKFLOW_APP_URL}\nPedir demonstração | #contato`,
-        },
-      ],
-      legal: `© ${year} ParkFlow.`,
-    }),
+    demoForm(),
+    footer(),
   ];
 
   return {
     "/": {
-      root: {
-        props: {
-          ...rootDefaults,
-          title: "ParkFlow — gestão de estacionamento com leitura de placa",
-          description:
-            "Sistema de estacionamento com leitura de placa pela câmera, ticket com QR code, cobrança na saída, mensalistas, convênios e painel em tempo real. Funciona sem internet.",
-          ogImage: shot("painel"),
-          theme: "light",
-          accent: ACCENT,
-          font: "clean",
-          buttonShape: "pill",
-          customCss: SCREENSHOT_CSS,
-        },
-      },
+      root: root(
+        "Sistema para estacionamento com leitura de placa | ParkFlow",
+        "Sistema para estacionamento com leitura de placa pela câmera, ticket com QR code, cobrança na saída, mensalistas, convênios e painel em tempo real.",
+        shot("painel")
+      ),
       content,
+    },
+    ...subPages(),
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Páginas de solução (uma busca específica cada): mensalistas,          */
+/* convênios e estacionamento sem cancela.                               */
+/* ------------------------------------------------------------------ */
+
+const checks = (...items: string[]) => items.map((text) => ({ text }));
+
+const hero = (eyebrow: string, title: string, subtitle: string) =>
+  b("Hero", {
+    variant: "minimal",
+    eyebrow,
+    title,
+    subtitle,
+    image: "",
+    titleSize: "md",
+    buttons: [
+      { label: "Pedir demonstração", href: "#contato", style: "primary" },
+      { label: "Conhecer o ParkFlow", href: "/", style: "link" },
+    ],
+    tone: "auto",
+  });
+
+const faq = (items: [string, string][]) =>
+  b("Faq", {
+    anchor: "perguntas",
+    title: "Perguntas frequentes",
+    items: items.map(([question, answer]) => ({ question, answer })),
+    tone: "subtle",
+  });
+
+const otherSolutions = (current: string) =>
+  b("Cards", {
+    eyebrow: "Veja também",
+    title: "Outras soluções do ParkFlow.",
+    intro: "",
+    columns: "3",
+    cardStyle: "outline",
+    items: [
+      {
+        title: "Mensalistas",
+        text: "Entrada pela placa, contratos, vencimento e inadimplência sob controle.",
+        href: "/mensalistas",
+      },
+      {
+        title: "Convênios com lojas",
+        text: "Desconto, minutos grátis ou conta paga pelo parceiro.",
+        href: "/convenios",
+      },
+      {
+        title: "Estacionamento sem cancela",
+        text: "Saída vista pela câmera e pendência controlada.",
+        href: "/sem-cancela",
+      },
+    ]
+      .filter((c) => c.href !== current)
+      .map((c) => ({ ...c, image: "", linkLabel: "Saiba mais" })),
+    tone: "auto",
+  });
+
+function subPages(): Record<string, PageData> {
+  return {
+    "/mensalistas": {
+      root: root(
+        "Controle de mensalistas para estacionamento | ParkFlow",
+        "Mensalista entra pela placa, sem cartão. Contratos com vencimento e carência, várias placas por cliente e controle de inadimplência no painel.",
+        shot("patio")
+      ),
+      content: [
+        navBar("/"),
+        hero(
+          "Mensalistas",
+          "Mensalista entra\npela placa.",
+          "Cadastre o cliente, as placas e o plano. A câmera reconhece o carro na entrada e o ParkFlow cuida das mensalidades, do vencimento e da inadimplência."
+        ),
+        b("Feature", {
+          eyebrow: "Sem cartão e sem planilha",
+          title: "A placa é a credencial.",
+          text: "O mensalista é reconhecido pela placa cadastrada e aparece no pátio como mensalista, separado dos rotativos e dos convênios.\n\nPor padrão ele não recebe ticket de entrada. Se a unidade preferir, liga a impressão também para ele.",
+          bullets: checks(
+            "Um cliente com várias placas e limite de vagas, por exemplo duas placas e uma vaga",
+            "Planos com valor e contratos com vencimento e carência",
+            "O contrato novo já gera a primeira mensalidade",
+            "Se a câmera errar um caractere e o operador corrigir a placa, o ticket passa a contar como mensalista"
+          ),
+          image: shot("patio"),
+          reverse: false,
+          buttons: [],
+          tone: "auto",
+        }),
+        b("Feature", {
+          eyebrow: "Inadimplência",
+          title: "Quem está atrasado, sem procurar.",
+          text: "As mensalidades vencidas aparecem no painel e o relatório de mensalistas mostra a situação de cada contrato, no computador ou no celular.",
+          bullets: checks(
+            "Mensalidades vencidas em destaque no painel",
+            "Relatório de mensalistas por período, com exportação para planilha",
+            "Cadastro com CPF ou CNPJ conferido e vários telefones e e-mails"
+          ),
+          image: shot("painel"),
+          reverse: true,
+          buttons: [],
+          tone: "subtle",
+        }),
+        b("Text", {
+          eyebrow: "Assistente de IA",
+          title: "Cadastre pedindo em português.",
+          body: "Diga ao assistente, por exemplo, para cadastrar um cliente com duas placas no plano mensal. Ele prepara o cadastro e o contrato e mostra o que vai mudar. Nada é gravado antes do seu clique em Aplicar.",
+          size: "md",
+          align: "center",
+          buttons: [],
+          tone: "auto",
+        }),
+        faq([
+          [
+            "O mensalista precisa de cartão ou controle?",
+            "Não. A câmera lê a placa e o sistema reconhece o veículo cadastrado no contrato do cliente.",
+          ],
+          [
+            "Um cliente pode ter mais de um carro?",
+            "Sim. O cliente pode ter várias placas, e o contrato define quantas vagas ele usa ao mesmo tempo.",
+          ],
+          [
+            "O mensalista recebe ticket na entrada?",
+            "Por padrão, não. A unidade pode ligar a impressão do ticket também para mensalistas em Configurações.",
+          ],
+          [
+            "Como sei quem está com a mensalidade atrasada?",
+            "O painel mostra as mensalidades vencidas e o relatório de mensalistas traz a situação de cada contrato.",
+          ],
+          [
+            "Funciona sem internet?",
+            "Sim. O servidor da unidade reconhece o mensalista mesmo sem conexão e sincroniza com a nuvem quando ela volta.",
+          ],
+        ]),
+        otherSolutions("/mensalistas"),
+        demoForm(),
+        footer(),
+      ],
+    },
+    "/convenios": {
+      root: root(
+        "Convênio de estacionamento com lojas e clínicas | ParkFlow",
+        "Desconto, minutos grátis ou isenção para clientes de lojas parceiras, pela placa ou na validação do ticket. O parceiro também pode pagar a conta.",
+        shot("convenios")
+      ),
+      content: [
+        navBar("/"),
+        hero(
+          "Convênios",
+          "O cliente do parceiro\nsai sem discussão.",
+          "Desconto, minutos grátis ou isenção total para quem vem da loja, da clínica ou do restaurante parceiro. O ParkFlow aplica a regra e calcula o valor na saída."
+        ),
+        b("Feature", {
+          eyebrow: "Regras por parceiro",
+          title: "Cada parceiro com a sua regra.",
+          text: "Cadastre o convênio uma vez e escolha como ele é aplicado: automaticamente pela placa dos clientes cadastrados ou na validação do ticket.",
+          bullets: checks(
+            "Desconto em porcentagem ou em reais, minutos grátis ou isenção total",
+            "Aplicação automática pela placa ou na validação do ticket",
+            "Validação do ticket pelo próprio parceiro, no portal do parceiro",
+            "O operador retira ou troca o convênio de um ticket aberto, quando precisa"
+          ),
+          image: shot("convenios"),
+          reverse: false,
+          buttons: [],
+          tone: "auto",
+        }),
+        b("Feature", {
+          eyebrow: "Conta do parceiro",
+          title: "A loja paga. Você acompanha.",
+          text: "No convênio “conta do parceiro”, o valor do cliente vai para a conta da loja e vira um valor a receber, fora do caixa do dia. Se o parceiro cobre só uma parte, o cliente paga o restante na forma que quiser.",
+          bullets: checks(
+            "Um botão para cada parceiro na tela de recebimento",
+            "Baixa do que o parceiro pagou, ticket a ticket ou por período, com estorno do lote",
+            "O relatório do dia mostra quanto cada convênio tem a receber"
+          ),
+          image: shot("resultado_saida"),
+          reverse: true,
+          buttons: [],
+          tone: "subtle",
+        }),
+        faq([
+          [
+            "Quem paga o desconto, o estacionamento ou a loja?",
+            "Os dois modelos existem. No convênio de desconto, o estacionamento concede o benefício. No convênio “conta do parceiro”, a loja paga o valor e o sistema controla o que ela deve.",
+          ],
+          [
+            "Como o cliente da loja é reconhecido?",
+            "Pela placa, quando o cliente está cadastrado no convênio, ou pela validação do ticket feita pelo parceiro ou pelo operador.",
+          ],
+          [
+            "O valor do parceiro se mistura com o caixa?",
+            "Não. O que o parceiro deve fica como valor a receber, separado do caixa e do faturamento, até ser dado baixa.",
+          ],
+          [
+            "Posso ter vários parceiros?",
+            "Sim. Cada convênio tem o seu tipo de benefício e a sua forma de aplicação.",
+          ],
+        ]),
+        otherSolutions("/convenios"),
+        demoForm(),
+        footer(),
+      ],
+    },
+    "/sem-cancela": {
+      root: root(
+        "Estacionamento sem cancela com leitura de placa | ParkFlow",
+        "Sem cancela, a câmera da saída vê o carro, o valor fica registrado na hora e quem sai sem pagar vira uma pendência que o sistema avisa na volta.",
+        shot("patio")
+      ),
+      content: [
+        navBar("/"),
+        hero(
+          "Estacionamento sem cancela",
+          "Sem cancela.\nSem prejuízo.",
+          "Nem todo estacionamento tem cancela. O ParkFlow registra a entrada e a saída pela câmera e transforma o carro que saiu sem pagar em uma pendência controlada."
+        ),
+        b("Feature", {
+          eyebrow: "Visto na saída",
+          title: "O carro saiu? O sistema viu.",
+          text: "Quando a câmera da saída lê a placa de um carro com valor a pagar, o pátio marca “Visto na saída”, com a hora. O operador confirma “Saiu sem pagar” e o ticket vira pendência, com o valor daquela hora.",
+          bullets: checks(
+            "A saída de veículos nunca é bloqueada pelo sistema",
+            "A pendência é paga depois ou perdoada pelo gerente, com o motivo registrado",
+            "Quando a placa volta, o sistema avisa o operador da pendência",
+            "Foto da entrada e da saída como prova de cada passagem"
+          ),
+          image: shot("patio"),
+          reverse: false,
+          buttons: [],
+          tone: "auto",
+        }),
+        b("Feature", {
+          eyebrow: "Leitura conferida",
+          title: "Placa lida com um caractere errado.",
+          text: "Se a câmera da saída errar um caractere e existir um único ticket aberto parecido, o sistema usa esse ticket e marca para conferência. A marca, o modelo e a cor identificados por IA na entrada ajudam a confirmar que é o mesmo carro.",
+          bullets: checks(
+            "Leituras duvidosas vão para conferência do operador",
+            "A placa pode ser corrigida em um clique",
+            "Com dois tickets parecidos, nada é casado sozinho"
+          ),
+          image: shot("resultado_entrada"),
+          reverse: true,
+          buttons: [],
+          tone: "subtle",
+        }),
+        faq([
+          [
+            "O que acontece se o cliente sair sem pagar?",
+            "O operador confirma a saída sem pagamento e o ticket vira pendência, com a hora em que a câmera viu o carro e o valor daquele momento. Ela pode ser paga depois ou perdoada pelo gerente.",
+          ],
+          [
+            "A pendência é cobrada na próxima visita?",
+            "Quando a placa volta, o sistema avisa o operador. A pendência não é somada sozinha ao ticket novo: o operador cobra à parte.",
+          ],
+          [
+            "Preciso de câmera na saída?",
+            "Para o sistema ver a saída sozinho, sim. Sem câmera na saída, o operador registra a saída na tela.",
+          ],
+          [
+            "Dá para instalar uma cancela depois?",
+            "Sim. Com cancela, o ParkFlow pode acioná-la por um relé de rede.",
+          ],
+        ]),
+        otherSolutions("/sem-cancela"),
+        demoForm(),
+        footer(),
+      ],
     },
   };
 }
